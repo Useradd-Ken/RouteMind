@@ -2,6 +2,8 @@ package com.example.routemind;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,6 +27,11 @@ public class UserProfile extends AppCompatActivity {
             return insets;
         });
 
+        Button btnSave = findViewById(R.id.btn_save);
+        btnSave.setOnClickListener(v -> {
+            Toast.makeText(UserProfile.this, "Profile and Password Updated Successfully!", Toast.LENGTH_SHORT).show();
+        });
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_user_profile);
 
@@ -32,14 +39,13 @@ public class UserProfile extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
                 startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                overridePendingTransition(2, 3);
+                overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_activities) {
                 startActivity(new Intent(getApplicationContext(), sqlite.class));
                 overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_maps) {
-                // If you have a Maps activity, add it here.
                 return true;
             } else if (id == R.id.nav_trip_history) {
                 startActivity(new Intent(getApplicationContext(), TripHistory.class));

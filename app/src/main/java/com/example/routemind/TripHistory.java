@@ -2,6 +2,7 @@ package com.example.routemind;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,6 +11,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.card.MaterialCardView;
 
 public class TripHistory extends AppCompatActivity {
 
@@ -25,6 +27,20 @@ public class TripHistory extends AppCompatActivity {
             return insets;
         });
 
+        // Handle card clicks to open details
+        MaterialCardView card1 = findViewById(R.id.card_itinerary1);
+        MaterialCardView card2 = findViewById(R.id.card_itinerary2);
+        MaterialCardView card3 = findViewById(R.id.card_itinerary3);
+
+        View.OnClickListener detailsListener = v -> {
+            Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
+            startActivity(intent);
+        };
+
+        if (card1 != null) card1.setOnClickListener(detailsListener);
+        if (card2 != null) card2.setOnClickListener(detailsListener);
+        if (card3 != null) card3.setOnClickListener(detailsListener);
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_trip_history);
 
@@ -33,10 +49,12 @@ public class TripHistory extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_activities) {
                 startActivity(new Intent(getApplicationContext(), sqlite.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_maps) {
                 return true;
@@ -45,6 +63,7 @@ public class TripHistory extends AppCompatActivity {
             } else if (id == R.id.nav_user_profile) {
                 startActivity(new Intent(getApplicationContext(), UserProfile.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             }
             return false;
