@@ -10,6 +10,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 public class MainActivity extends AppCompatActivity {
 
     EditText etUsername, etPassword;
@@ -50,6 +52,36 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, TripActivity.class);
                 startActivity(intent);
             }
+        
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottom_navigation), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                return true;
+            } else if (id == R.id.nav_activities) {
+                startActivity(new Intent(getApplicationContext(), sqlite.class));
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (id == R.id.nav_maps) {
+                return true;
+            } else if (id == R.id.nav_trip_history) {
+                startActivity(new Intent(getApplicationContext(), TripHistory.class));
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (id == R.id.nav_user_profile) {
+                startActivity(new Intent(getApplicationContext(), UserProfile.class));
+                overridePendingTransition(0, 0);
+                return true;
+            }
+            return false;
         });
     }
 }

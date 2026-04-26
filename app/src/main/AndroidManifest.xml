@@ -13,6 +13,7 @@
         android:theme="@style/Theme.RouteMind">
         <activity
             android:name=".TripActivity"
+            android:name=".ItineraryDetails"
             android:exported="false" />
         <activity
             android:name=".sqlite"
