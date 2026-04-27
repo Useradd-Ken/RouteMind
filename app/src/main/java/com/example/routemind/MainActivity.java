@@ -9,11 +9,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,6 +16,9 @@ public class MainActivity extends AppCompatActivity {
     Button btnLogin;
     ImageView btnGoogleLogin;
     TextView tvResult;
+
+    // Static variable for one-time session email
+    public static String sessionEmail = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,11 +37,18 @@ public class MainActivity extends AppCompatActivity {
                 String user = etUsername.getText().toString();
                 String pass = etPassword.getText().toString();
 
-                if (user.equals("admin") && pass.equals("1234")) {
+                if (user.contains("@") && pass.equals("1234")) {
+                    sessionEmail = user;
                     Intent intent = new Intent(MainActivity.this, TripActivity.class);
                     startActivity(intent);
+                    finish(); // Usually login page shouldn't be in backstack
+                } else if (user.equals("admin") && pass.equals("1234")) {
+                    sessionEmail = "admin@routemind.com";
+                    Intent intent = new Intent(MainActivity.this, TripActivity.class);
+                    startActivity(intent);
+                    finish();
                 } else {
-                    tvResult.setText("Login failed!");
+                    tvResult.setText("Login failed! Use an email and '1234'");
                 }
             }
         });
@@ -51,41 +56,11 @@ public class MainActivity extends AppCompatActivity {
         btnGoogleLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Link to TripActivity for now as requested
+                sessionEmail = "google_user@gmail.com";
                 Intent intent = new Intent(MainActivity.this, TripActivity.class);
                 startActivity(intent);
+                finish();
             }
-        });
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottom_navigation), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
-
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
-
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                return true;
-            } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), sqlite.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.nav_maps) {
-                return true;
-            } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(getApplicationContext(), TripHistory.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.nav_user_profile) {
-                startActivity(new Intent(getApplicationContext(), UserProfile.class));
-                overridePendingTransition(0, 0);
-                return true;
-            }
-            return false;
         });
     }
 }

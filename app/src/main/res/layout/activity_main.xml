@@ -25,7 +25,7 @@
         android:id="@+id/tvUsernameLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Username"
+        android:text="Username / Email"
         android:textStyle="bold"
         android:textColor="#0D254F"
         app:layout_constraintTop_toBottomOf="@id/imageView"
@@ -37,7 +37,7 @@
         android:id="@+id/etUsername"
         android:layout_width="0dp"
         android:layout_height="50dp"
-        android:hint=""
+        android:hint="Enter email"
         android:background="@drawable/edit_text_bg"
         app:layout_constraintTop_toBottomOf="@id/tvUsernameLabel"
         app:layout_constraintStart_toStartOf="parent"
@@ -136,14 +136,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:itemRippleColor="#33FFFFFF"
-        app:labelVisibilityMode="labeled"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -47,7 +47,7 @@ public class TripHistory extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                startActivity(new Intent(getApplicationContext(), TripActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
