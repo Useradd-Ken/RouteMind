@@ -155,12 +155,13 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/primary_color"
-        app:itemIconTint="@color/nav_item_color"
-        app:itemTextColor="@color/nav_item_color"
-        app:itemRippleColor="#33FFFFFF"
-        app:labelVisibilityMode="labeled"
+        android:layout_height="72dp"
+        android:background="@android:color/white"
+        app:itemIconSize="26dp"
+        app:itemIconTint="@color/nav_background"
+        app:itemTextColor="@color/nav_background"
+        app:labelVisibilityMode="unlabeled"
+        app:elevation="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

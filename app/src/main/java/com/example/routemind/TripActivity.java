@@ -1,7 +1,9 @@
 package com.example.routemind;
 
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -23,6 +25,8 @@ public class TripActivity extends AppCompatActivity {
     EditText etStartDate, etEndDate, etBudget, etInterests;
     Button btnCreateTrip;
     ImageView btnBack;
+
+    private static final String PREF_NAME = "BudgetPrefs";
 
     // Sample destinations for suggestions
     private static final String[] DESTINATIONS = new String[] {
@@ -56,6 +60,7 @@ public class TripActivity extends AppCompatActivity {
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                startActivity(new Intent(TripActivity.this, HomePage.class));
                 finish();
             }
         });
@@ -74,36 +79,55 @@ public class TripActivity extends AppCompatActivity {
                     return;
                 }
 
+                // Sync budget with BudgetTracker
+                if (!budget.isEmpty()) {
+                    try {
+                        double budgetValue = Double.parseDouble(budget);
+                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putLong("totalBudget", Double.doubleToLongBits(budgetValue));
+                        editor.apply();
+                    } catch (NumberFormatException e) {
+                        // ignore invalid number
+                    }
+                }
+
                 Toast.makeText(TripActivity.this,
-                        "Trip Created:\n" +
-                                "Destination: " + destination + "\n" +
-                                "Dates: " + startDate + " - " + endDate + "\n" +
-                                "Budget: " + budget + "\n" +
-                                "Interests: " + interests,
+                        "Trip Created Successfully!\nYour budget has been updated in the Budget Tracker.",
                         Toast.LENGTH_LONG).show();
+                
+                // Redirect to Budget Tracker to see the update
+                startActivity(new Intent(TripActivity.this, BudgetTracker.class));
+                finish();
             }
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        bottomNavigationView.setSelectedItemId(R.id.nav_maps);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
+                startActivity(new Intent(getApplicationContext(), HomePage.class));
+                overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), sqlite.class));
+                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_maps) {
                 return true;
             } else if (id == R.id.nav_trip_history) {
                 startActivity(new Intent(getApplicationContext(), TripHistory.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_user_profile) {
                 startActivity(new Intent(getApplicationContext(), UserProfile.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             }
             return false;

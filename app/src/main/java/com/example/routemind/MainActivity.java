@@ -39,12 +39,12 @@ public class MainActivity extends AppCompatActivity {
 
                 if (user.contains("@") && pass.equals("1234")) {
                     sessionEmail = user;
-                    Intent intent = new Intent(MainActivity.this, TripActivity.class);
+                    Intent intent = new Intent(MainActivity.this, HomePage.class);
                     startActivity(intent);
-                    finish(); // Usually login page shouldn't be in backstack
+                    finish();
                 } else if (user.equals("admin") && pass.equals("1234")) {
                     sessionEmail = "admin@routemind.com";
-                    Intent intent = new Intent(MainActivity.this, TripActivity.class);
+                    Intent intent = new Intent(MainActivity.this, HomePage.class);
                     startActivity(intent);
                     finish();
                 } else {
@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 sessionEmail = "google_user@gmail.com";
-                Intent intent = new Intent(MainActivity.this, TripActivity.class);
+                Intent intent = new Intent(MainActivity.this, HomePage.class);
                 startActivity(intent);
                 finish();
             }

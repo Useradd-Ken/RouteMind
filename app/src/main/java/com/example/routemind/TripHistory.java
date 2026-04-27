@@ -47,16 +47,19 @@ public class TripHistory extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                startActivity(new Intent(getApplicationContext(), TripActivity.class));
+                startActivity(new Intent(getApplicationContext(), HomePage.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), sqlite.class));
+                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_maps) {
+                startActivity(new Intent(getApplicationContext(), TripActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_trip_history) {
                 return true;

@@ -45,21 +45,24 @@ public class UserProfile extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                // Since we are moving from Login -> TripActivity, usually Home is TripActivity or similar.
-                // If MainActivity is strictly a Login page now (no Nav), we might want to redirect elsewhere 
-                // but for now I'll keep the logic or point it to where the "Home" is.
-                startActivity(new Intent(getApplicationContext(), TripActivity.class));
+                startActivity(new Intent(getApplicationContext(), HomePage.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), sqlite.class));
+                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_maps) {
+                startActivity(new Intent(getApplicationContext(), TripActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_trip_history) {
                 startActivity(new Intent(getApplicationContext(), TripHistory.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return true;
             } else if (id == R.id.nav_user_profile) {
                 return true;
