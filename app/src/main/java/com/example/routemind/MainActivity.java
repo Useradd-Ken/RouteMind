@@ -19,6 +19,11 @@ public class MainActivity extends AppCompatActivity {
     ImageView btnGoogleLogin;
     TextView tvResult;
 
+<<<<<<< Updated upstream
+=======
+    public static String sessionEmail;
+
+>>>>>>> Stashed changes
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,7 +42,12 @@ public class MainActivity extends AppCompatActivity {
                 String pass = etPassword.getText().toString();
 
                 if (user.equals("admin") && pass.equals("1234")) {
+<<<<<<< Updated upstream
                     Intent intent = new Intent(MainActivity.this, TripActivity.class);
+=======
+                    sessionEmail = user;
+                    Intent intent = new Intent(MainActivity.this, UserProfile.class);
+>>>>>>> Stashed changes
                     startActivity(intent);
                 } else {
                     tvResult.setText("Login failed!");
@@ -48,8 +58,13 @@ public class MainActivity extends AppCompatActivity {
         btnGoogleLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+<<<<<<< Updated upstream
                 // Link to TripActivity for now as requested
                 Intent intent = new Intent(MainActivity.this, TripActivity.class);
+=======
+                sessionEmail = "google_user@example.com";
+                Intent intent = new Intent(MainActivity.this, UserProfile.class);
+>>>>>>> Stashed changes
                 startActivity(intent);
             }
         
