@@ -12,6 +12,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
 
 public class UserProfile extends AppCompatActivity {
 
@@ -26,6 +27,11 @@ public class UserProfile extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        TextInputEditText editEmail = findViewById(R.id.edit_email);
+        if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
+            editEmail.setText(MainActivity.sessionEmail);
+        }
 
         Button btnSave = findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v -> {

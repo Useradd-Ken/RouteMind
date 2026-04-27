@@ -13,6 +13,8 @@
         android:theme="@style/Theme.RouteMind">
         <activity
             android:name=".TripActivity"
+            android:exported="false" />
+        <activity
             android:name=".ItineraryDetails"
             android:exported="false" />
         <activity
@@ -23,9 +25,7 @@
             android:exported="false" />
         <activity
             android:name=".UserProfile"
-            android:exported="false">
-
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true" >
