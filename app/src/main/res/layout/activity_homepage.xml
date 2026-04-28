@@ -53,7 +53,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_search"
+                        android:src="@android:drawable/ic_menu_search"
                         app:tint="#5F6368" />
 
                     <EditText
@@ -95,8 +95,8 @@
                             android:layout_width="28dp"
                             android:layout_height="28dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/ic_food"
-                            app:tint="@color/nav_background" />
+                            android:src="@drawable/ic_activities"
+                            app:tint="@color/primary_color" />
                     </com.google.android.material.card.MaterialCardView>
                     <TextView
                         android:layout_width="wrap_content"
@@ -128,8 +128,8 @@
                             android:layout_width="28dp"
                             android:layout_height="28dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/ic_hotel"
-                            app:tint="@color/nav_background" />
+                            android:src="@drawable/ic_user"
+                            app:tint="@color/primary_color" />
                     </com.google.android.material.card.MaterialCardView>
                     <TextView
                         android:layout_width="wrap_content"
@@ -161,8 +161,8 @@
                             android:layout_width="28dp"
                             android:layout_height="28dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/ic_map"
-                            app:tint="@color/nav_background" />
+                            android:src="@drawable/ic_maps"
+                            app:tint="@color/primary_color" />
                     </com.google.android.material.card.MaterialCardView>
                     <TextView
                         android:layout_width="wrap_content"
@@ -198,7 +198,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="40dp"
-                app:cardBackgroundColor="@color/nav_background"
+                app:cardBackgroundColor="@color/primary_color"
                 app:cardCornerRadius="20dp">
 
                 <LinearLayout
@@ -231,7 +231,7 @@
                         android:backgroundTint="@color/white"
                         android:text="Create Trip Now!"
                         android:textAllCaps="false"
-                        android:textColor="@color/nav_background"
+                        android:textColor="@color/primary_color"
                         app:cornerRadius="12dp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -242,13 +242,12 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:background="@android:color/white"
-        app:itemIconSize="26dp"
-        app:itemIconTint="@color/nav_background"
-        app:itemTextColor="@color/nav_background"
-        app:labelVisibilityMode="unlabeled"
-        app:elevation="16dp"
+        android:layout_height="wrap_content"
+        android:background="@color/primary_color"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:itemRippleColor="#33FFFFFF"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 
