@@ -3,12 +3,10 @@ package com.example.routemind;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.card.MaterialCardView;
 import java.util.List;
 
 public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.ViewHolder> {
@@ -19,64 +17,51 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
         this.itineraryItems = itineraryItems;
     }
 
-    public void setItineraryItems(List<ItineraryItem> items) {
-        this.itineraryItems = items;
+    public void setItineraryItems(List<ItineraryItem> itineraryItems) {
+        this.itineraryItems = itineraryItems;
         notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_itinerary, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_itinerary_detail, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        if (itineraryItems == null || position >= itineraryItems.size()) return;
+        
         ItineraryItem item = itineraryItems.get(position);
         holder.tvTime.setText(item.getTime());
-        holder.tvTitle.setText(item.getActivityTitle());
-        holder.tvLocation.setText(item.getLocation());
+        holder.tvTitle.setText(item.getTitle());
         holder.tvCost.setText(item.getCost());
+        holder.tvLocation.setText(item.getLocation());
+        
+        // Remove listener before setting state to avoid trigger
+        holder.checkBox.setOnCheckedChangeListener(null);
+        holder.checkBox.setChecked(item.isSelected());
 
-        // Update button text and card style based on selection state
-        updateUI(holder, item.isSelected());
-
-        holder.btnSelect.setOnClickListener(v -> {
-            item.setSelected(!item.isSelected());
-            updateUI(holder, item.isSelected());
-        });
-    }
-
-    private void updateUI(ViewHolder holder, boolean isSelected) {
-        if (isSelected) {
-            holder.btnSelect.setText("Deselect");
-            holder.cardView.setStrokeWidth(4);
-            holder.cardView.setStrokeColor(ContextCompat.getColor(holder.cardView.getContext(), R.color.menu_background));
-        } else {
-            holder.btnSelect.setText("Select");
-            holder.cardView.setStrokeWidth(0);
-        }
+        holder.checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> item.setSelected(isChecked));
     }
 
     @Override
     public int getItemCount() {
-        return itineraryItems.size();
+        return itineraryItems == null ? 0 : itineraryItems.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvTime, tvTitle, tvLocation, tvCost;
-        Button btnSelect;
-        MaterialCardView cardView;
+        TextView tvTime, tvTitle, tvCost, tvLocation;
+        CheckBox checkBox;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTime = itemView.findViewById(R.id.tv_time);
-            tvTitle = itemView.findViewById(R.id.tv_activity_title);
-            tvLocation = itemView.findViewById(R.id.tv_location);
+            tvTitle = itemView.findViewById(R.id.tv_title);
             tvCost = itemView.findViewById(R.id.tv_cost);
-            btnSelect = itemView.findViewById(R.id.btn_select);
-            cardView = itemView.findViewById(R.id.card_view);
+            tvLocation = itemView.findViewById(R.id.tv_location);
+            checkBox = itemView.findViewById(R.id.cb_select);
         }
     }
 }

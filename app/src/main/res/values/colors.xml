@@ -2,8 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary_color">#102955</color>
-    <color name="nav_item_selected">#102955</color>
-    <color name="nav_item_unselected">#FFFFFF</color>
-    <color name="menu_background">#0D254F</color>
+    <color name="nav_background">#00224D</color>
+    <color name="primary_color">#0D254F</color>
+    <color name="nav_item_selected">#FFFFFF</color>
+    <color name="nav_item_unselected">#A0A0A0</color>
 </resources>
