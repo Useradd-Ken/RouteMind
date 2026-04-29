@@ -15,6 +15,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RouteMind">
         <activity
+            android:name=".FinalItineraryActivity"
+            android:exported="false" />
+        <activity
             android:name=".ItineraryPageActivity"
             android:exported="false" />
         <activity

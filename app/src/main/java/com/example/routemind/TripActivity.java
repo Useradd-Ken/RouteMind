@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 public class TripActivity extends AppCompatActivity {
 
@@ -25,6 +26,7 @@ public class TripActivity extends AppCompatActivity {
     EditText etStartDate, etEndDate, etBudget, etInterests;
     Button btnCreateTrip;
     ImageView btnBack;
+    private DatabaseHelper dbHelper;
 
     private static final String PREF_NAME = "BudgetPrefs";
 
@@ -39,6 +41,8 @@ public class TripActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip);
+
+        dbHelper = new DatabaseHelper(this);
 
         etDestination = findViewById(R.id.etDestination);
         etStartDate   = findViewById(R.id.etStartDate);
@@ -78,6 +82,9 @@ public class TripActivity extends AppCompatActivity {
                     Toast.makeText(TripActivity.this, "Please fill in Destination and Dates", Toast.LENGTH_SHORT).show();
                     return;
                 }
+
+                // Clear previous itinerary data to force AI re-generation for the new trip
+                dbHelper.clearItinerary();
 
                 SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -147,7 +154,7 @@ public class TripActivity extends AppCompatActivity {
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this,
                 (view, year1, monthOfYear, dayOfMonth) -> {
-                    String selectedDate = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
+                    String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%04d", dayOfMonth, monthOfYear + 1, year1);
                     editText.setText(selectedDate);
                 }, year, month, day);
         datePickerDialog.show();

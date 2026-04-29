@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="8dp">
+
+    <TextView
+        android:id="@+id/tv_activity_time"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:text="08:00 AM"
+        android:textColor="#757575"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:id="@+id/tv_activity_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Visit Magellan's Cross"
+            android:textColor="#0D254F"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_activity_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cebu City"
+            android:textColor="#9E9E9E"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+</LinearLayout>

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -14,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.ai.client.generativeai.GenerativeModel;
 import com.google.ai.client.generativeai.java.GenerativeModelFutures;
@@ -24,6 +26,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +37,8 @@ public class ItineraryPageActivity extends AppCompatActivity {
 
     private RecyclerView rvItinerary;
     private LinearLayout layoutDaySelector;
+    private View loadingLayout;
+    private View contentLayout;
 
     private List<ItineraryItem> allItems = new ArrayList<>();
     private ItineraryAdapter adapter;
@@ -53,6 +58,8 @@ public class ItineraryPageActivity extends AppCompatActivity {
         
         layoutDaySelector = findViewById(R.id.layout_day_selector);
         rvItinerary = findViewById(R.id.rv_itinerary);
+        loadingLayout = findViewById(R.id.loading_layout);
+        contentLayout = findViewById(R.id.content_layout);
         Button btnGenerateGuide = findViewById(R.id.btn_generate_guide);
         
         rvItinerary.setLayoutManager(new LinearLayoutManager(this));
@@ -62,19 +69,64 @@ public class ItineraryPageActivity extends AppCompatActivity {
 
         btnGenerateGuide.setOnClickListener(v -> {
             ArrayList<ItineraryItem> selectedItems = new ArrayList<>();
+            ArrayList<ItineraryItem> remainingItems = new ArrayList<>();
             for (ItineraryItem item : allItems) {
                 if (item.isSelected()) {
                     selectedItems.add(item);
+                } else {
+                    remainingItems.add(item);
                 }
             }
 
             if (selectedItems.isEmpty()) {
-                Toast.makeText(this, "Please select at least one activity", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please select at least one activity to remove", Toast.LENGTH_SHORT).show();
             } else {
-                Intent intent = new Intent(ItineraryPageActivity.this, ItineraryDetails.class);
-                intent.putExtra("selected_items", selectedItems);
-                startActivity(intent);
+                // Remove selected items from database
+                backgroundExecutor.execute(() -> {
+                    for (ItineraryItem item : selectedItems) {
+                        dbHelper.deleteItineraryItem(item.getId());
+                    }
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(ItineraryPageActivity.this, FinalItineraryActivity.class);
+                        // Pass the ones that were NOT selected (remainingItems) to the final itinerary
+                        intent.putExtra("final_items", remainingItems);
+                        startActivity(intent);
+                        // Refresh the current list to show items are removed
+                        loadData();
+                    });
+                });
             }
+        });
+
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.nav_maps);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                startActivity(new Intent(getApplicationContext(), HomePage.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_activities) {
+                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_maps) {
+                return true;
+            } else if (id == R.id.nav_trip_history) {
+                startActivity(new Intent(getApplicationContext(), TripHistory.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_user_profile) {
+                startActivity(new Intent(getApplicationContext(), UserProfile.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            return false;
         });
     }
 
@@ -96,7 +148,20 @@ public class ItineraryPageActivity extends AppCompatActivity {
         });
     }
 
+    private void showLoading(boolean show) {
+        runOnUiThread(() -> {
+            if (show) {
+                loadingLayout.setVisibility(View.VISIBLE);
+                contentLayout.setVisibility(View.GONE);
+            } else {
+                loadingLayout.setVisibility(View.GONE);
+                contentLayout.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
     private void generateAIItinerary() {
+        showLoading(true);
         backgroundExecutor.execute(() -> {
             SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
             final String destination = prefs.getString("destination", "Cebu");
@@ -106,15 +171,14 @@ public class ItineraryPageActivity extends AppCompatActivity {
             double budget = Double.longBitsToDouble(budgetLong);
             String interests = prefs.getString("interests", "");
 
-            final int days = calculateDays(startDate, endDate);
-            int finalDays = (days <= 0) ? 3 : days;
+            int finalDays = calculateDays(startDate, endDate);
 
             // Database read moved to background thread
             String placesContext = dbHelper.getPlacesContext();
 
             String prompt = "Create a " + finalDays + "-day " + destination + " itinerary (Budget: " + budget + " PHP). " +
                     "Interests: " + interests + ". " +
-                    "Include these places if possible: " + placesContext + ". But if interests doesn't align with the place possible, get places from the internet." +
+                    "Include these places if possible: " + placesContext + "." +
                     "Format: Day [Num] | [Time] | [Cost PHP/Free] | [Title] | [Location]. One item per line.";
 
             try {
@@ -126,26 +190,26 @@ public class ItineraryPageActivity extends AppCompatActivity {
                         .addText(prompt)
                         .build();
 
-                runOnUiThread(() -> Toast.makeText(this, "AI is planning your trip to " + destination + "...", Toast.LENGTH_LONG).show());
-
                 ListenableFuture<GenerateContentResponse> responseFuture = model.generateContent(content);
                 responseFuture.addListener(() -> {
                     try {
                         GenerateContentResponse response = responseFuture.get();
                         if (response != null && response.getText() != null) {
-                            // Parsing also involves database writes, keep on background
                             backgroundExecutor.execute(() -> parseAndSaveItinerary(response.getText()));
                         } else {
                             showError("AI returned an empty response.");
+                            showLoading(false);
                         }
                     } catch (Exception e) {
                         Log.e("AI_ERROR", "Error generating itinerary: " + e.getMessage(), e);
                         showError("AI error: " + e.getLocalizedMessage());
+                        showLoading(false);
                     }
                 }, backgroundExecutor);
             } catch (Exception e) {
                 Log.e("AI_ERROR", "Error initializing GenerativeModel: " + e.getMessage(), e);
                 showError("AI initialization error.");
+                showLoading(false);
             }
         });
     }
@@ -155,15 +219,37 @@ public class ItineraryPageActivity extends AppCompatActivity {
     }
 
     private int calculateDays(String start, String end) {
-        if (start.isEmpty() || end.isEmpty()) return 3;
+        if (start == null || start.isEmpty() || end == null || end.isEmpty()) return 3;
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         try {
             Date d1 = sdf.parse(start);
             Date d2 = sdf.parse(end);
             if (d1 == null || d2 == null) return 3;
-            long diff = d2.getTime() - d1.getTime();
-            return (int) (diff / (1000 * 60 * 60 * 24)) + 1;
+
+            Calendar startCal = Calendar.getInstance();
+            startCal.setTime(d1);
+            startCal.set(Calendar.HOUR_OF_DAY, 0);
+            startCal.set(Calendar.MINUTE, 0);
+            startCal.set(Calendar.SECOND, 0);
+            startCal.set(Calendar.MILLISECOND, 0);
+
+            Calendar endCal = Calendar.getInstance();
+            endCal.setTime(d2);
+            endCal.set(Calendar.HOUR_OF_DAY, 0);
+            endCal.set(Calendar.MINUTE, 0);
+            endCal.set(Calendar.SECOND, 0);
+            endCal.set(Calendar.MILLISECOND, 0);
+
+            if (startCal.after(endCal)) return 1;
+
+            int daysCount = 0;
+            while (!startCal.after(endCal)) {
+                daysCount++;
+                startCal.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return daysCount;
         } catch (ParseException e) {
+            Log.e("DATE_ERROR", "Failed to parse dates: " + start + ", " + end);
             return 3;
         }
     }
@@ -194,9 +280,11 @@ public class ItineraryPageActivity extends AppCompatActivity {
         }
         if (hasItems) {
             loadData(); // This will trigger runOnUiThread and UI update
+            showLoading(false);
         } else {
             Log.e("AI_RESPONSE", "No valid itinerary items found in response: " + text);
             showError("AI generated an invalid itinerary format.");
+            showLoading(false);
         }
     }
 
