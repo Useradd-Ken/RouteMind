@@ -20,6 +20,12 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".AdminPanelActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false" />
+        <activity
             android:name=".BudgetTracker"
             android:exported="false" />
         <activity

@@ -31,6 +31,17 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_logout"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Logout"
+                android:textColor="@android:color/holo_red_dark"
+                app:layout_constraintBottom_toBottomOf="@+id/tv_profile_header"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/tv_profile_header" />
+
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/iv_profile_pic"
                 android:layout_width="120dp"
@@ -155,13 +166,12 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:background="@android:color/white"
-        app:itemIconSize="26dp"
-        app:itemIconTint="@color/nav_background"
-        app:itemTextColor="@color/nav_background"
-        app:labelVisibilityMode="unlabeled"
-        app:elevation="16dp"
+        android:layout_height="wrap_content"
+        android:background="@color/nav_background"
+        app:itemIconTint="@android:color/white"
+        app:itemTextColor="@android:color/white"
+        app:itemRippleColor="#33FFFFFF"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

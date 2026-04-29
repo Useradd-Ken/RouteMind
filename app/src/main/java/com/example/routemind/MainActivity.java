@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -15,9 +16,10 @@ public class MainActivity extends AppCompatActivity {
     EditText etUsername, etPassword;
     Button btnLogin;
     ImageView btnGoogleLogin;
-    TextView tvResult;
+    TextView tvResult, tvSignup;
+    DBHelper DB;
 
-    // Static variable for one-time session email
+    // Static variable for session email
     public static String sessionEmail = "";
 
     @Override
@@ -30,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
         btnLogin   = findViewById(R.id.btnLogin);
         btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         tvResult   = findViewById(R.id.tvResult);
+        tvSignup   = findViewById(R.id.tvSignup);
+        DB = new DBHelper(this);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -37,19 +41,39 @@ public class MainActivity extends AppCompatActivity {
                 String user = etUsername.getText().toString();
                 String pass = etPassword.getText().toString();
 
-                if (user.contains("@") && pass.equals("1234")) {
-                    sessionEmail = user;
-                    Intent intent = new Intent(MainActivity.this, HomePage.class);
-                    startActivity(intent);
-                    finish();
-                } else if (user.equals("admin") && pass.equals("1234")) {
-                    sessionEmail = "admin@routemind.com";
-                    Intent intent = new Intent(MainActivity.this, HomePage.class);
-                    startActivity(intent);
-                    finish();
+                if (user.equals("") || pass.equals("")) {
+                    Toast.makeText(MainActivity.this, "Please enter all the fields", Toast.LENGTH_SHORT).show();
                 } else {
-                    tvResult.setText("Login failed! Use an email and '1234'");
+                    // Admin Access Check
+                    if (user.equals("admin") && pass.equals("admin123")) {
+                        Toast.makeText(MainActivity.this, "Welcome Admin", Toast.LENGTH_SHORT).show();
+                        sessionEmail = "admin";
+                        Intent intent = new Intent(getApplicationContext(), AdminPanelActivity.class);
+                        startActivity(intent);
+                        finish();
+                        return;
+                    }
+
+                    // Regular User Check
+                    Boolean checkuserpass = DB.checkUsernamePassword(user, pass);
+                    if (checkuserpass) {
+                        Toast.makeText(MainActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                        sessionEmail = user;
+                        Intent intent = new Intent(getApplicationContext(), HomePage.class);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Invalid Credentials", Toast.LENGTH_SHORT).show();
+                    }
                 }
+            }
+        });
+
+        tvSignup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
+                startActivity(intent);
             }
         });
 

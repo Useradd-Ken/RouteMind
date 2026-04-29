@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.Calendar;
+import java.util.List;
 
 public class TripActivity extends AppCompatActivity {
 
@@ -25,15 +26,9 @@ public class TripActivity extends AppCompatActivity {
     EditText etStartDate, etEndDate, etBudget, etInterests;
     Button btnCreateTrip;
     ImageView btnBack;
+    DBHelper DB;
 
     private static final String PREF_NAME = "BudgetPrefs";
-
-    // Sample destinations for suggestions
-    private static final String[] DESTINATIONS = new String[] {
-            "Manila", "Cebu", "Davao", "Palawan", "Bohol", "Boracay",
-            "Baguio", "Vigan", "Siargao", "Zamboanga", "Legazpi",
-            "Puerto Princesa", "Tagaytay", "Dumaguete", "Iloilo"
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,10 +42,14 @@ public class TripActivity extends AppCompatActivity {
         etInterests   = findViewById(R.id.etInterests);
         btnCreateTrip = findViewById(R.id.btnCreateTrip);
         btnBack       = findViewById(R.id.btnBack);
+        DB = new DBHelper(this);
 
-        // Set up AutoComplete for Destination
+        // Fetch destinations from SQLite DB
+        List<String> destinations = DB.getAllDestinations();
+        
+        // Set up AutoComplete for Destination using DB data
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_dropdown_item_1line, DESTINATIONS);
+                android.R.layout.simple_dropdown_item_1line, destinations);
         etDestination.setAdapter(adapter);
 
         // Set up DatePickers for Start Date and End Date

@@ -1,9 +1,9 @@
 package com.example.routemind;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -13,8 +13,13 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
 
 public class UserProfile extends AppCompatActivity {
+
+    TextInputEditText editEmail, editName;
+    Button btnSave, btnLogout;
+    DBHelper DB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,10 +27,23 @@ public class UserProfile extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_user_profile);
 
-        // Fetch session email from MainActivity
-        EditText editEmail = findViewById(R.id.edit_email);
+        editEmail = findViewById(R.id.edit_email);
+        editName = findViewById(R.id.edit_name);
+        btnSave = findViewById(R.id.btn_save);
+        btnLogout = findViewById(R.id.btn_logout);
+        DB = new DBHelper(this);
+
+        // Fetch data from DB using session username
         if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
-            editEmail.setText(MainActivity.sessionEmail);
+            Cursor cursor = DB.getUserData(MainActivity.sessionEmail);
+            if (cursor.moveToFirst()) {
+                String username = cursor.getString(0);
+                String email = cursor.getString(1);
+                
+                editName.setText(username);
+                editEmail.setText(email);
+            }
+            cursor.close();
         }
         
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -34,9 +52,17 @@ public class UserProfile extends AppCompatActivity {
             return insets;
         });
 
-        Button btnSave = findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v -> {
             Toast.makeText(UserProfile.this, "Profile and Password Updated Successfully!", Toast.LENGTH_SHORT).show();
+        });
+
+        btnLogout.setOnClickListener(v -> {
+            MainActivity.sessionEmail = "";
+            Toast.makeText(UserProfile.this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(UserProfile.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
