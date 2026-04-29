@@ -46,16 +46,33 @@
                 app:strokeColor="@color/primary_color"
                 app:strokeWidth="2dp" />
 
+            <TextView
+                android:id="@+id/tv_profile_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="User Name"
+                android:textColor="@color/primary_color"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/iv_profile_pic" />
+
+            <!-- Limited card width to 488dp as per Material Design recommendations for text field readability -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_profile"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintWidth_max="488dp"
                 app:strokeWidth="1dp"
                 app:strokeColor="#E0E0E0"
-                app:layout_constraintTop_toBottomOf="@id/iv_profile_pic">
+                app:layout_constraintTop_toBottomOf="@id/tv_profile_name">
 
                 <LinearLayout
                     android:layout_width="match_parent"

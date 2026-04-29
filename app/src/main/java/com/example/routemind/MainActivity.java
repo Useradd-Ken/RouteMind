@@ -5,8 +5,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,13 +16,16 @@ public class MainActivity extends AppCompatActivity {
 
     EditText etUsername, etPassword;
     Button btnLogin;
-    ImageView btnGoogleLogin;
+    Button btnGoogleLogin; // Kept to avoid layout errors, but logic removed
     TextView tvResult;
+    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        dbHelper = new DatabaseHelper(this);
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
@@ -36,11 +39,29 @@ public class MainActivity extends AppCompatActivity {
                 String user = etUsername.getText().toString();
                 String pass = etPassword.getText().toString();
 
+<<<<<<< Updated upstream
                 if (user.equals("admin") && pass.equals("1234")) {
                     Intent intent = new Intent(MainActivity.this, TripActivity.class);
                     startActivity(intent);
                 } else {
                     tvResult.setText("Login failed!");
+=======
+                // Static Login Logic
+                if (user.equals("admin") && pass.equals("1234")) {
+                    sessionEmail = "admin@routemind.com";
+                    if (dbHelper.getName(sessionEmail) == null) {
+                        dbHelper.addUser(sessionEmail, "Administrator");
+                    }
+                    navigateToHome();
+                } else if (user.contains("@") && pass.equals("1234")) {
+                    sessionEmail = user;
+                    if (dbHelper.getName(user) == null) {
+                        dbHelper.addUser(user, user.split("@")[0]);
+                    }
+                    navigateToHome();
+                } else {
+                    tvResult.setText("Login failed! Use 'admin' and '1234'");
+>>>>>>> Stashed changes
                 }
             }
         });
@@ -48,9 +69,13 @@ public class MainActivity extends AppCompatActivity {
         btnGoogleLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+<<<<<<< Updated upstream
                 // Link to TripActivity for now as requested
                 Intent intent = new Intent(MainActivity.this, TripActivity.class);
                 startActivity(intent);
+=======
+                Toast.makeText(MainActivity.this, "Google Sign-In is currently disabled. Use admin login.", Toast.LENGTH_SHORT).show();
+>>>>>>> Stashed changes
             }
         
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottom_navigation), (v, insets) -> {
@@ -83,5 +108,11 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    private void navigateToHome() {
+        Intent intent = new Intent(MainActivity.this, HomePage.class);
+        startActivity(intent);
+        finish();
     }
 }
