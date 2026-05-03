@@ -163,6 +163,20 @@
                         app:backgroundTint="@color/primary_color"
                         app:cornerRadius="16dp" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_logout"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="16dp"
+                        android:text="Logout"
+                        android:textAllCaps="false"
+                        android:textColor="#E53935"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="16dp"
+                        app:strokeColor="#E53935" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

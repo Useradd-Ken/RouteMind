@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class UserProfile extends AppCompatActivity {
 
@@ -50,9 +51,21 @@ public class UserProfile extends AppCompatActivity {
         btnSave.setOnClickListener(v -> {
             String updatedName = editName.getText().toString();
             if (MainActivity.sessionEmail != null) {
-                dbHelper.addUser(MainActivity.sessionEmail, updatedName);
-                Toast.makeText(UserProfile.this, "Profile and Password Updated Successfully!", Toast.LENGTH_SHORT).show();
+                // Fixed: Changed addUser to addUserProfile to match DatabaseHelper.java
+                dbHelper.addUserProfile(MainActivity.sessionEmail, updatedName);
+                Toast.makeText(UserProfile.this, "Profile Updated Successfully!", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        // Logout Button Logic
+        Button btnLogout = findViewById(R.id.btn_logout);
+        btnLogout.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            MainActivity.sessionEmail = "";
+            Intent intent = new Intent(UserProfile.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);

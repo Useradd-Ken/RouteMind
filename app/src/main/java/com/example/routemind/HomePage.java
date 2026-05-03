@@ -179,13 +179,6 @@ public class HomePage extends AppCompatActivity {
             View itemView = inflater.inflate(R.layout.item_explore, resultsContainer, false);
             ((TextView) itemView.findViewById(R.id.item_title)).setText(item.title);
             ((TextView) itemView.findViewById(R.id.item_subtitle)).setText(item.subtitle);
-<<<<<<< Updated upstream
-            ImageView imageView = itemView.findViewById(R.id.item_image);
-            Glide.with(this).load(item.imageUrl).placeholder(R.drawable.ic_map).centerCrop().into(imageView);
-            
-            itemView.setOnClickListener(v -> {
-                if (isSearch) {
-=======
             ((ImageView) itemView.findViewById(R.id.item_image)).setImageResource(item.imageRes);
             
             itemView.setOnClickListener(v -> {
@@ -196,7 +189,6 @@ public class HomePage extends AppCompatActivity {
                     intent.putExtra("ITINERARY_ID", "sample_" + item.title.toLowerCase());
                     startActivity(intent);
                 } else {
->>>>>>> Stashed changes
                     currentLat = item.lat;
                     currentLon = item.lon;
                     currentPlaceName = item.title;
@@ -213,10 +205,6 @@ public class HomePage extends AppCompatActivity {
 
     private void clearDisplay() {
         resultsContainer.removeAllViews();
-<<<<<<< Updated upstream
-        tvSectionTitle.setText("Search a place to get started");
-        planTripCard.setVisibility(View.VISIBLE);
-=======
         tvSectionTitle.setText("Recommended for You");
         showExploreResults("Recommended for You", getSampleTrips(), false);
     }
@@ -228,7 +216,6 @@ public class HomePage extends AppCompatActivity {
         list.add(new ExploreItem("Siargao Surfing", "4 Days - Adventure", R.drawable.ic_map,
             "Day 1: Surfing.\nDay 2: Island Hopping.\nDay 3: Sugba Lagoon."));
         return list;
->>>>>>> Stashed changes
     }
 
     private void hideKeyboard() {
@@ -254,13 +241,6 @@ public class HomePage extends AppCompatActivity {
     }
 
     private static class ExploreItem {
-<<<<<<< Updated upstream
-        String title, subtitle, imageUrl;
-        double lat, lon;
-        ExploreItem(String title, String subtitle, String imageUrl) {
-            this.title = title; this.subtitle = subtitle; this.imageUrl = imageUrl;
-        }
-=======
         String title, subtitle, itinerary;
         int imageRes;
         double lat, lon;
@@ -271,7 +251,6 @@ public class HomePage extends AppCompatActivity {
             this(title, subtitle, imageRes);
             this.itinerary = itinerary;
         }
->>>>>>> Stashed changes
     }
 
     public interface NominatimService {
@@ -283,43 +262,6 @@ public class HomePage extends AppCompatActivity {
             @SerializedName("lon") public String lon;
         }
     }
-<<<<<<< Updated upstream
-    public static class Geometry { @SerializedName("coordinates") public List<Double> coordinates; }
-
-    public static class PhotonAutocompleteAdapter extends ArrayAdapter<Feature> implements Filterable {
-        private List<Feature> results = new ArrayList<>();
-        private final PhotonService service;
-
-        public PhotonAutocompleteAdapter(@NonNull Context context) {
-            super(context, android.R.layout.simple_dropdown_item_1line);
-            service = new Retrofit.Builder().baseUrl("https://photon.komoot.io/").addConverterFactory(GsonConverterFactory.create()).build().create(PhotonService.class);
-        }
-
-        @Override public int getCount() { return results.size(); }
-        @Nullable @Override public Feature getItem(int position) { return results.get(position); }
-
-        @NonNull @Override public Filter getFilter() {
-            return new Filter() {
-                @Override protected FilterResults performFiltering(CharSequence constraint) {
-                    FilterResults fr = new FilterResults();
-                    if (constraint != null && constraint.length() > 2) {
-                        try {
-                            Response<PhotonResponse> response = service.search(constraint.toString(), 10).execute();
-                            if (response.isSuccessful() && response.body() != null) {
-                                results = response.body().features;
-                                fr.values = results; fr.count = results.size();
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                    return fr;
-                }
-                @Override protected void publishResults(CharSequence constraint, FilterResults fr) {
-                    if (fr.count > 0) notifyDataSetChanged(); else notifyDataSetInvalidated();
-                }
-                @Override public CharSequence convertResultToString(Object r) { return ((Feature) r).properties.getDisplayName(); }
-            };
-        }
-=======
 
     public interface OverpassService {
         @GET("interpreter")
@@ -335,6 +277,5 @@ public class HomePage extends AppCompatActivity {
         }
         class Center { @SerializedName("lat") public Double lat; @SerializedName("lon") public Double lon; }
         class Tags { @SerializedName("name") public String name; }
->>>>>>> Stashed changes
     }
 }

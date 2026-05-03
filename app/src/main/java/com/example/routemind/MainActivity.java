@@ -10,15 +10,18 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class MainActivity extends AppCompatActivity {
 
     EditText etUsername, etPassword;
     Button btnLogin;
-    Button btnGoogleLogin; // Kept to avoid layout errors, but logic removed
-    TextView tvResult;
+    TextView tvResult, tvSignup;
+    FirebaseAuth mAuth;
     DatabaseHelper dbHelper;
 
-    // Static variable for one-time session email
     public static String sessionEmail = "";
 
     @Override
@@ -26,50 +29,84 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        try {
+            if (FirebaseApp.getApps(this).isEmpty()) {
+                FirebaseApp.initializeApp(this);
+            }
+            mAuth = FirebaseAuth.getInstance();
+        } catch (Exception e) {
+            // Graceful failure if google-services.json is missing
+        }
+        
         dbHelper = new DatabaseHelper(this);
+
+        if (mAuth != null) {
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            if (currentUser != null) {
+                sessionEmail = currentUser.getEmail();
+                navigateToHome();
+            }
+        }
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         btnLogin   = findViewById(R.id.btnLogin);
-        btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         tvResult   = findViewById(R.id.tvResult);
+        tvSignup   = findViewById(R.id.tvSignup);
 
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String user = etUsername.getText().toString();
-                String pass = etPassword.getText().toString();
+        btnLogin.setOnClickListener(v -> {
+            String email = etUsername.getText().toString().trim();
+            String pass = etPassword.getText().toString().trim();
 
-                // Static Login Logic
-                if (user.equals("admin") && pass.equals("1234")) {
-                    sessionEmail = "admin@routemind.com";
-                    if (dbHelper.getName(sessionEmail) == null) {
-                        dbHelper.addUser(sessionEmail, "Administrator");
-                    }
-                    navigateToHome();
-                } else if (user.contains("@") && pass.equals("1234")) {
-                    sessionEmail = user;
-                    if (dbHelper.getName(user) == null) {
-                        dbHelper.addUser(user, user.split("@")[0]);
-                    }
-                    navigateToHome();
+            if (email.isEmpty() || pass.isEmpty()) {
+                Toast.makeText(MainActivity.this, "Please enter all fields", Toast.LENGTH_SHORT).show();
+            } else {
+                // Admin Access Check
+                if (email.equals("admin@routemind.com") && pass.equals("admin123")) {
+                    sessionEmail = "admin";
+                    Toast.makeText(MainActivity.this, "Welcome Admin", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(getApplicationContext(), AdminPanelActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return;
+                }
+
+                if (mAuth != null) {
+                    loginUser(email, pass);
                 } else {
-                    tvResult.setText("Login failed! Use 'admin' and '1234'");
+                    // Fallback to SQLite if Firebase isn't configured
+                    if (dbHelper.checkUser(email, pass)) {
+                        sessionEmail = email;
+                        navigateToHome();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Login failed. Check credentials or Firebase config.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         });
 
-        btnGoogleLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Google Sign-In is currently disabled. Use admin login.", Toast.LENGTH_SHORT).show();
-            }
+        tvSignup.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, SignUpActivity.class));
         });
     }
 
+    private void loginUser(String email, String password) {
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        sessionEmail = user != null ? user.getEmail() : email;
+                        Toast.makeText(MainActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                        navigateToHome();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Login failed: " + task.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     private void navigateToHome() {
-        Intent intent = new Intent(MainActivity.this, HomePage.class);
-        startActivity(intent);
+        startActivity(new Intent(MainActivity.this, HomePage.class));
         finish();
     }
 }

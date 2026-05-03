@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "725236555521",
+    "project_id": "mindroute-5bf7a",
+    "storage_bucket": "mindroute-5bf7a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:725236555521:android:d26d3a9cfd5bf26456c500",
+        "android_client_info": {
+          "package_name": "com.example.routemind"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiv1kSLTPRjoo-zA-yvUcf0CjApbd7Wwg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

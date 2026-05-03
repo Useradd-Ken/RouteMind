@@ -1,7 +1,10 @@
 package com.example.routemind;
 
+import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -10,29 +13,83 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class ItineraryDetails extends AppCompatActivity {
 
+    RatingBar ratingBar;
+    EditText etReview;
+    Button btnSubmit, btnBack;
+    TextView tvDestination;
+    DBHelper DB;
+    String itineraryId;
+    boolean isUpdate = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_itinerary_details);
 
-        // Fetch extras from Intent
-        String itinerary = getIntent().getStringExtra("itinerary");
+        ratingBar = findViewById(R.id.rating_bar);
+        etReview = findViewById(R.id.et_review);
+        btnSubmit = findViewById(R.id.btn_submit_rating);
+        btnBack = findViewById(R.id.btn_back);
+        tvDestination = findViewById(R.id.tv_details_header); // Using header as destination title
+        DB = new DBHelper(this);
+
         String destination = getIntent().getStringExtra("destination");
-
-        TextView tvDestination = findViewById(R.id.tv_details_destination);
-        TextView tvItinerary = findViewById(R.id.tv_full_itinerary);
-
+        itineraryId = getIntent().getStringExtra("ITINERARY_ID");
+        
         if (destination != null) tvDestination.setText(destination);
-        if (itinerary != null) tvItinerary.setText(itinerary);
+        if (itineraryId == null) itineraryId = "default_trip";
 
-        Button btnBack = findViewById(R.id.btn_back);
+        // Check if user has already reviewed this itinerary
+        checkExistingReview();
+
         btnBack.setOnClickListener(v -> finish());
 
-        Button btnSubmit = findViewById(R.id.btn_submit_rating);
         btnSubmit.setOnClickListener(v -> {
-            Toast.makeText(this, "Thank you for your rating!", Toast.LENGTH_SHORT).show();
-            finish();
+            float rating = ratingBar.getRating();
+            String review = etReview.getText().toString();
+            String username = MainActivity.sessionEmail;
+
+            if (username == null || username.isEmpty()) {
+                username = "Anonymous";
+            }
+
+            if (rating == 0) {
+                Toast.makeText(this, "Please provide a rating", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            boolean success;
+            if (isUpdate) {
+                success = DB.updateReview(username, itineraryId, rating, review);
+            } else {
+                success = DB.insertReview(username, itineraryId, rating, review);
+            }
+
+            if (success) {
+                Toast.makeText(this, isUpdate ? "Review updated!" : "Review submitted!", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Operation failed", Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+
+    private void checkExistingReview() {
+        String username = MainActivity.sessionEmail;
+        if (username == null || username.isEmpty()) return;
+
+        Cursor cursor = DB.getUserReview(username, itineraryId);
+        if (cursor.moveToFirst()) {
+            // Index 3 is rating, index 4 is review in schema
+            float existingRating = cursor.getFloat(3);
+            String existingReview = cursor.getString(4);
+
+            ratingBar.setRating(existingRating);
+            etReview.setText(existingReview);
+            btnSubmit.setText("Update Feedback");
+            isUpdate = true;
+        }
+        cursor.close();
     }
 }

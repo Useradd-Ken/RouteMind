@@ -16,7 +16,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.card.MaterialCardView;
 
 public class TripHistory extends AppCompatActivity {
 
@@ -71,16 +70,18 @@ public class TripHistory extends AppCompatActivity {
     private void loadTripHistory() {
         llTripList.removeAllViews();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query("trips", null, null, null, null, null, "id DESC");
+        // Get trips ordered by latest first
+        Cursor cursor = db.query(DatabaseHelper.TABLE_TRIPS, null, null, null, null, null, DatabaseHelper.COLUMN_TRIP_ID + " DESC");
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                String destination = cursor.getString(cursor.getColumnIndexOrThrow("destination"));
-                String startDate = cursor.getString(cursor.getColumnIndexOrThrow("start_date"));
-                String endDate = cursor.getString(cursor.getColumnIndexOrThrow("end_date"));
-                String itinerary = cursor.getString(cursor.getColumnIndexOrThrow("itinerary"));
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TRIP_ID));
+                String destination = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DESTINATION));
+                String startDate = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_START_DATE));
+                String endDate = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_END_DATE));
+                String itinerary = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_ITINERARY));
 
-                View tripView = LayoutInflater.from(this).inflate(R.layout.item_trip_history, llTripList, false);
+                View tripView = LayoutInflater.from(this).inflate(R.layout.item_itinerary, llTripList, false);
                 
                 TextView tvTitle = tripView.findViewById(R.id.tv_trip_title);
                 TextView tvDate = tripView.findViewById(R.id.tv_trip_date);
@@ -92,6 +93,8 @@ public class TripHistory extends AppCompatActivity {
                     Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
                     intent.putExtra("itinerary", itinerary);
                     intent.putExtra("destination", destination);
+                    // Pass the ID so the review is saved for THIS specific trip
+                    intent.putExtra("ITINERARY_ID", String.valueOf(id));
                     startActivity(intent);
                 });
 
