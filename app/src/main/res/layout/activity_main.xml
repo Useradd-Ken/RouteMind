@@ -125,6 +125,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginHorizontal="20dp"/>
 
+<<<<<<< Updated upstream
     <!-- Result Text -->
     <TextView
         android:id="@+id/tvResult"
@@ -136,5 +137,61 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
+=======
+        <TextView
+            android:id="@+id/tvResult"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#D32F2F"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogin"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="24dp"
+            android:text="Login"
+            android:textAllCaps="false"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/primary_color"
+            app:cornerRadius="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:text="OR"
+            android:textColor="#757575" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoogleLogin"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="24dp"
+            android:text="Continue with Google"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_color"
+            app:cornerRadius="16dp"
+            app:icon="@android:drawable/ic_menu_gallery"
+            app:iconGravity="textStart"
+            app:iconTint="@color/primary_color"
+            app:strokeColor="@color/primary_color" />
+
+        <TextView
+            android:id="@+id/tvSignup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:text="Don't have an account? Sign Up"
+            android:textColor="@color/primary_color"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+>>>>>>> Stashed changes
 
 </androidx.constraintlayout.widget.ConstraintLayout>

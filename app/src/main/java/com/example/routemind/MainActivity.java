@@ -11,15 +11,25 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class MainActivity extends AppCompatActivity {
 
     EditText etUsername, etPassword;
     Button btnLogin;
+<<<<<<< Updated upstream
     ImageView btnGoogleLogin;
     TextView tvResult, tvSignup;
     DBHelper DB;
 
     // Static variable for session email
+=======
+    TextView tvResult, tvSignup;
+    FirebaseAuth mAuth;
+
+>>>>>>> Stashed changes
     public static String sessionEmail = "";
 
     @Override
@@ -27,20 +37,41 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+<<<<<<< Updated upstream
+=======
+        try {
+            if (FirebaseApp.getApps(this).isEmpty()) {
+                FirebaseApp.initializeApp(this);
+            }
+            mAuth = FirebaseAuth.getInstance();
+        } catch (Exception e) {
+            // Graceful failure if google-services.json is missing
+        }
+        
+        if (mAuth != null) {
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            if (currentUser != null) {
+                sessionEmail = currentUser.getEmail();
+                navigateToHome();
+            }
+        }
+
+>>>>>>> Stashed changes
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         btnLogin   = findViewById(R.id.btnLogin);
-        btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         tvResult   = findViewById(R.id.tvResult);
         tvSignup   = findViewById(R.id.tvSignup);
+<<<<<<< Updated upstream
         DB = new DBHelper(this);
+=======
+>>>>>>> Stashed changes
 
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String user = etUsername.getText().toString();
-                String pass = etPassword.getText().toString();
+        btnLogin.setOnClickListener(v -> {
+            String email = etUsername.getText().toString().trim();
+            String pass = etPassword.getText().toString().trim();
 
+<<<<<<< Updated upstream
                 if (user.equals("") || pass.equals("")) {
                     Toast.makeText(MainActivity.this, "Please enter all the fields", Toast.LENGTH_SHORT).show();
                 } else {
@@ -65,10 +96,26 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(MainActivity.this, "Invalid Credentials", Toast.LENGTH_SHORT).show();
                     }
+=======
+            if (email.isEmpty() || pass.isEmpty()) {
+                Toast.makeText(MainActivity.this, "Please enter all fields", Toast.LENGTH_SHORT).show();
+            } else {
+                if (email.equals("admin@routemind.com") && pass.equals("admin123")) {
+                    sessionEmail = "admin";
+                    navigateToHome();
+                    return;
+                }
+
+                if (mAuth != null) {
+                    loginUser(email, pass);
+                } else {
+                    Toast.makeText(MainActivity.this, "Firebase not configured. Use admin login.", Toast.LENGTH_LONG).show();
+>>>>>>> Stashed changes
                 }
             }
         });
 
+<<<<<<< Updated upstream
         tvSignup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,3 +135,30 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 }
+=======
+        tvSignup.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, SignUpActivity.class));
+        });
+    }
+
+    private void loginUser(String email, String password) {
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        sessionEmail = user != null ? user.getEmail() : email;
+                        Toast.makeText(MainActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                        navigateToHome();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Login failed: " + task.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void navigateToHome() {
+        startActivity(new Intent(MainActivity.this, HomePage.class));
+        finish();
+    }
+}
+>>>>>>> Stashed changes

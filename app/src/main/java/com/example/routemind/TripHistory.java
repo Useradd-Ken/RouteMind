@@ -11,7 +11,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.card.MaterialCardView;
 
 public class TripHistory extends AppCompatActivity {
 
@@ -68,9 +67,50 @@ public class TripHistory extends AppCompatActivity {
         });
     }
 
+<<<<<<< Updated upstream
     private void openDetails(String itineraryId) {
         Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
         intent.putExtra("ITINERARY_ID", itineraryId);
         startActivity(intent);
+=======
+    private void loadTripHistory() {
+        llTripList.removeAllViews();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.query("trips", null, null, null, null, null, "id DESC");
+
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
+                String destination = cursor.getString(cursor.getColumnIndexOrThrow("destination"));
+                String startDate = cursor.getString(cursor.getColumnIndexOrThrow("start_date"));
+                String endDate = cursor.getString(cursor.getColumnIndexOrThrow("end_date"));
+                String itinerary = cursor.getString(cursor.getColumnIndexOrThrow("itinerary"));
+
+                View tripView = LayoutInflater.from(this).inflate(R.layout.item_itinerary, llTripList, false);
+                
+                TextView tvTitle = tripView.findViewById(R.id.tv_trip_title);
+                TextView tvDate = tripView.findViewById(R.id.tv_trip_date);
+                
+                tvTitle.setText(destination);
+                tvDate.setText(startDate + " - " + endDate);
+
+                tripView.setOnClickListener(v -> {
+                    Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
+                    intent.putExtra("ITINERARY_ID", String.valueOf(id));
+                    intent.putExtra("destination", destination);
+                    intent.putExtra("itinerary", itinerary);
+                    startActivity(intent);
+                });
+
+                llTripList.addView(tripView);
+            } while (cursor.moveToNext());
+            cursor.close();
+        } else {
+            TextView tvNoTrips = new TextView(this);
+            tvNoTrips.setText("No trips found in history.");
+            tvNoTrips.setPadding(50, 50, 50, 50);
+            llTripList.addView(tvNoTrips);
+        }
+>>>>>>> Stashed changes
     }
 }

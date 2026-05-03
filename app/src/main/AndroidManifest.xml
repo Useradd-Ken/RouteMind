@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
+        android:name=".RouteMindApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -20,9 +21,12 @@
             </intent-filter>
         </activity>
         <activity
+<<<<<<< Updated upstream
             android:name=".AdminPanelActivity"
             android:exported="false" />
         <activity
+=======
+>>>>>>> Stashed changes
             android:name=".SignUpActivity"
             android:exported="false" />
         <activity

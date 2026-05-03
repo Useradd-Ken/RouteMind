@@ -71,6 +71,9 @@ public class HomePage extends AppCompatActivity {
         findViewById(R.id.category_stays).setOnClickListener(v -> showExploreResults("Recommended Stays", getStaysData()));
         findViewById(R.id.category_places).setOnClickListener(v -> showExploreResults("Popular Places", getPlacesData()));
 
+        // Initialize with sample trips
+        resetUI();
+
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setSelectedItemId(R.id.nav_home);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -124,6 +127,18 @@ public class HomePage extends AppCompatActivity {
             ((TextView) itemView.findViewById(R.id.item_title)).setText(item.title);
             ((TextView) itemView.findViewById(R.id.item_subtitle)).setText(item.subtitle);
             ((ImageView) itemView.findViewById(R.id.item_image)).setImageResource(item.imageRes);
+            
+            // Link to details if it's a trip
+            if (item.itinerary != null) {
+                itemView.setOnClickListener(v -> {
+                    Intent intent = new Intent(HomePage.this, ItineraryDetails.class);
+                    intent.putExtra("destination", item.title);
+                    intent.putExtra("itinerary", item.itinerary);
+                    intent.putExtra("ITINERARY_ID", "sample_" + item.title.toLowerCase().replace(" ", "_"));
+                    startActivity(intent);
+                });
+            }
+            
             resultsContainer.addView(itemView);
         }
     }
@@ -132,6 +147,59 @@ public class HomePage extends AppCompatActivity {
         resultsContainer.removeAllViews();
         tvSectionTitle.setText("Recommended for You");
         planTripCard.setVisibility(View.VISIBLE);
+        
+        // Show Featured Itineraries
+        for (ExploreItem item : getSampleTrips()) {
+            View itemView = LayoutInflater.from(this).inflate(R.layout.item_explore, resultsContainer, false);
+            ((TextView) itemView.findViewById(R.id.item_title)).setText(item.title);
+            ((TextView) itemView.findViewById(R.id.item_subtitle)).setText(item.subtitle);
+            ((ImageView) itemView.findViewById(R.id.item_image)).setImageResource(item.imageRes);
+            
+            itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(HomePage.this, ItineraryDetails.class);
+                intent.putExtra("destination", item.title);
+                intent.putExtra("itinerary", item.itinerary);
+                intent.putExtra("ITINERARY_ID", "sample_" + item.title.toLowerCase().replace(" ", "_"));
+                startActivity(intent);
+            });
+            resultsContainer.addView(itemView);
+        }
+    }
+
+    private List<ExploreItem> getSampleTrips() {
+        List<ExploreItem> list = new ArrayList<>();
+        list.add(new ExploreItem("Batanes Escape", "3 Days - Culture & Nature", R.drawable.ic_map, 
+            "Day 1: Arrival at Basco, Mt. Carmel Chapel, Fundacion Pacita.\n" +
+            "Day 2: Batan South Tour - Chawa View Deck, Mahatao Pier, Tayid Lighthouse.\n" +
+            "Day 3: Sabtang Island - Nakabuang Beach, Savidug Stone Houses."));
+        
+        list.add(new ExploreItem("Siargao Surfing", "4 Days - Adventure", R.drawable.ic_map,
+            "Day 1: Cloud 9 Surfing, Shaka Cafe.\n" +
+            "Day 2: Guyam, Daku, and Naked Island Hopping.\n" +
+            "Day 3: Sugba Lagoon & Magpupungko Rock Pools.\n" +
+            "Day 4: Coconut Mountain View & Maasin River."));
+
+        list.add(new ExploreItem("Boracay Bliss", "3 Days - Relaxation", R.drawable.ic_map,
+            "Day 1: White Beach Sunset, Dinner at D'Mall.\n" +
+            "Day 2: Island Hopping (Puka Beach, Crystal Cove).\n" +
+            "Day 3: Parasailing and Helmet Diving."));
+
+        list.add(new ExploreItem("El Nido Adventure", "4 Days - Nature", R.drawable.ic_map,
+            "Day 1: Nacpan Beach and Lio Tourism Estate.\n" +
+            "Day 2: Tour A (Big Lagoon, Secret Lagoon).\n" +
+            "Day 3: Tour C (Hidden Beach, Helicopter Island).\n" +
+            "Day 4: Taraw Cliff Hike and Canopy Walk."));
+
+        list.add(new ExploreItem("Baguio City Tour", "2 Days - Refreshing", R.drawable.ic_map,
+            "Day 1: Burnham Park, Session Road, Cathedral.\n" +
+            "Day 2: Mines View Park, Wright Park, The Mansion."));
+
+        list.add(new ExploreItem("Cebu Heritage", "3 Days - History & Sea", R.drawable.ic_map,
+            "Day 1: Magellan's Cross, Fort San Pedro, Taoist Temple.\n" +
+            "Day 2: Oslob Whale Shark Watching & Sumilon Island.\n" +
+            "Day 3: Kawasan Falls Canyoneering."));
+
+        return list;
     }
 
     private List<ExploreItem> getFoodData() {
@@ -160,16 +228,23 @@ public class HomePage extends AppCompatActivity {
         list.addAll(getFoodData());
         list.addAll(getStaysData());
         list.addAll(getPlacesData());
+        list.addAll(getSampleTrips());
         return list;
     }
 
     private static class ExploreItem {
-        String title, subtitle;
+        String title, subtitle, itinerary;
         int imageRes;
         ExploreItem(String title, String subtitle, int imageRes) {
             this.title = title;
             this.subtitle = subtitle;
             this.imageRes = imageRes;
+        }
+        ExploreItem(String title, String subtitle, int imageRes, String itinerary) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.imageRes = imageRes;
+            this.itinerary = itinerary;
         }
     }
 }
