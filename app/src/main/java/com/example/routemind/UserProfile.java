@@ -2,6 +2,7 @@ package com.example.routemind;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -14,10 +15,17 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserProfile extends AppCompatActivity {
 
+    private static final String TAG = "UserProfile";
     DatabaseHelper dbHelper;
+    FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +34,11 @@ public class UserProfile extends AppCompatActivity {
         setContentView(R.layout.activity_user_profile);
 
         dbHelper = new DatabaseHelper(this);
+        try {
+            firestore = FirebaseFirestore.getInstance();
+        } catch (Exception e) {
+            Log.e(TAG, "Firestore initialization failed: " + e.getMessage());
+        }
 
         EditText editEmail = findViewById(R.id.edit_email);
         EditText editName = findViewById(R.id.edit_name);
@@ -50,9 +63,17 @@ public class UserProfile extends AppCompatActivity {
         Button btnSave = findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v -> {
             String updatedName = editName.getText().toString();
-            if (MainActivity.sessionEmail != null) {
-                // Fixed: Changed addUser to addUserProfile to match DatabaseHelper.java
-                dbHelper.addUserProfile(MainActivity.sessionEmail, updatedName);
+            String email = MainActivity.sessionEmail;
+
+            if (email != null && !email.isEmpty()) {
+                // 1. Save to Local SQLite
+                dbHelper.addUserProfile(email, updatedName);
+                
+                // 2. Sync to Remote Firestore (Creates 'users' collection/doc if doesn't exist)
+                if (firestore != null) {
+                    syncUserProfileToFirestore(email, updatedName);
+                }
+
                 Toast.makeText(UserProfile.this, "Profile Updated Successfully!", Toast.LENGTH_SHORT).show();
             }
         });
@@ -98,5 +119,21 @@ public class UserProfile extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    private void syncUserProfileToFirestore(String email, String name) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("email", email);
+        userMap.put("name", name);
+        userMap.put("lastUpdated", com.google.firebase.Timestamp.now());
+
+        // Using email as document ID (sanitized)
+        String docId = email.replace(".", "_");
+
+        firestore.collection("users")
+                .document(docId)
+                .set(userMap, SetOptions.merge()) // merge() ensures creation of path if missing
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "User profile synced to Firestore"))
+                .addOnFailureListener(e -> Log.e(TAG, "User profile sync failed", e));
     }
 }

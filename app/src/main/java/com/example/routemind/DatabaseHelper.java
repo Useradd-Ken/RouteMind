@@ -14,15 +14,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "RouteMind.db";
-    private static final int DATABASE_VERSION = 7; // Bumped version for merged schema
+    private static final int DATABASE_VERSION = 8; // Bumped version for added user_name in reviews
 
-    // Users Credentials Table (from old DBHelper)
+    // Users Credentials Table
     public static final String TABLE_USERS = "users";
     public static final String COLUMN_USERNAME = "username";
     public static final String COLUMN_EMAIL = "email";
     public static final String COLUMN_PASSWORD = "password";
 
-    // User Profile Table (for additional info)
+    // User Profile Table
     public static final String TABLE_PROFILE = "users_profile";
     public static final String COLUMN_PROFILE_EMAIL = "email";
     public static final String COLUMN_PROFILE_NAME = "name";
@@ -37,10 +37,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_INTERESTS = "interests";
     public static final String COLUMN_ITINERARY = "itinerary";
 
-    // Reviews Table (from old DBHelper)
+    // Reviews Table
     public static final String TABLE_REVIEWS = "reviews";
     public static final String COLUMN_REVIEW_ID = "id";
     public static final String COLUMN_REVIEW_USER = "username";
+    public static final String COLUMN_REVIEW_USER_NAME = "user_name"; // New column for user data
     public static final String COLUMN_REVIEW_ITIN_ID = "itinerary_id";
     public static final String COLUMN_REVIEW_RATING = "rating";
     public static final String COLUMN_REVIEW_TEXT = "review";
@@ -56,21 +57,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        Log.d(TAG, "Creating merged database tables...");
+        Log.d(TAG, "Creating database tables...");
         
-        // Credentials
         db.execSQL("CREATE TABLE " + TABLE_USERS + "(" + COLUMN_USERNAME + " TEXT PRIMARY KEY, " + COLUMN_EMAIL + " TEXT, " + COLUMN_PASSWORD + " TEXT)");
-        
-        // Profile
         db.execSQL("CREATE TABLE " + TABLE_PROFILE + "(" + COLUMN_PROFILE_EMAIL + " TEXT PRIMARY KEY, " + COLUMN_PROFILE_NAME + " TEXT)");
-        
-        // Trips
         db.execSQL("CREATE TABLE " + TABLE_TRIPS + "(" + COLUMN_TRIP_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_DESTINATION + " TEXT, " + COLUMN_START_DATE + " TEXT, " + COLUMN_END_DATE + " TEXT, " + COLUMN_BUDGET + " TEXT, " + COLUMN_INTERESTS + " TEXT, " + COLUMN_ITINERARY + " TEXT)");
-        
-        // Reviews
-        db.execSQL("CREATE TABLE " + TABLE_REVIEWS + "(" + COLUMN_REVIEW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_REVIEW_USER + " TEXT, " + COLUMN_REVIEW_ITIN_ID + " TEXT, " + COLUMN_REVIEW_RATING + " REAL, " + COLUMN_REVIEW_TEXT + " TEXT, " + COLUMN_REVIEW_TIME + " DATETIME DEFAULT CURRENT_TIMESTAMP)");
-        
-        // Destinations
+        db.execSQL("CREATE TABLE " + TABLE_REVIEWS + "(" + COLUMN_REVIEW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_REVIEW_USER + " TEXT, " + COLUMN_REVIEW_USER_NAME + " TEXT, " + COLUMN_REVIEW_ITIN_ID + " TEXT, " + COLUMN_REVIEW_RATING + " REAL, " + COLUMN_REVIEW_TEXT + " TEXT, " + COLUMN_REVIEW_TIME + " DATETIME DEFAULT CURRENT_TIMESTAMP)");
         db.execSQL("CREATE TABLE " + TABLE_DESTINATIONS + "(" + COLUMN_DEST_NAME + " TEXT PRIMARY KEY)");
 
         seedDestinations(db);
@@ -160,19 +152,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // --- Review Methods ---
-    public Boolean insertReview(String username, String itineraryId, float rating, String review) {
+    public Boolean insertReview(String username, String userName, String itineraryId, float rating, String review) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_REVIEW_USER, username);
+        cv.put(COLUMN_REVIEW_USER_NAME, userName);
         cv.put(COLUMN_REVIEW_ITIN_ID, itineraryId);
         cv.put(COLUMN_REVIEW_RATING, rating);
         cv.put(COLUMN_REVIEW_TEXT, review);
         return db.insert(TABLE_REVIEWS, null, cv) != -1;
     }
 
-    public Boolean updateReview(String username, String itineraryId, float rating, String review) {
+    public Boolean updateReview(String username, String userName, String itineraryId, float rating, String review) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
+        cv.put(COLUMN_REVIEW_USER_NAME, userName);
         cv.put(COLUMN_REVIEW_RATING, rating);
         cv.put(COLUMN_REVIEW_TEXT, review);
         return db.update(TABLE_REVIEWS, cv, COLUMN_REVIEW_USER + " = ? AND " + COLUMN_REVIEW_ITIN_ID + " = ?", new String[]{username, itineraryId}) != -1;

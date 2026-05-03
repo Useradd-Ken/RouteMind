@@ -14,14 +14,14 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String DBNAME = "Login.db";
 
     public DBHelper(Context context) {
-        super(context, "Login.db", null, 6);
+        super(context, "Login.db", null, 7); // Version bumped
     }
 
     @Override
     public void onCreate(SQLiteDatabase MyDB) {
         MyDB.execSQL("create Table users(username TEXT primary key, email TEXT, password TEXT)");
         MyDB.execSQL("create Table destinations(name TEXT primary key)");
-        MyDB.execSQL("create Table reviews(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, itinerary_id TEXT, rating REAL, review TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
+        MyDB.execSQL("create Table reviews(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, user_name TEXT, itinerary_id TEXT, rating REAL, review TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
         
         // Seed initial data
         seedDestinations(MyDB);
@@ -93,10 +93,11 @@ public class DBHelper extends SQLiteOpenHelper {
         return destinations;
     }
 
-    public Boolean insertReview(String username, String itineraryId, float rating, String review) {
+    public Boolean insertReview(String username, String userName, String itineraryId, float rating, String review) {
         SQLiteDatabase MyDB = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("username", username);
+        contentValues.put("user_name", userName);
         contentValues.put("itinerary_id", itineraryId);
         contentValues.put("rating", rating);
         contentValues.put("review", review);
@@ -104,9 +105,10 @@ public class DBHelper extends SQLiteOpenHelper {
         return result != -1;
     }
 
-    public Boolean updateReview(String username, String itineraryId, float rating, String review) {
+    public Boolean updateReview(String username, String userName, String itineraryId, float rating, String review) {
         SQLiteDatabase MyDB = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
+        contentValues.put("user_name", userName);
         contentValues.put("rating", rating);
         contentValues.put("review", review);
         long result = MyDB.update("reviews", contentValues, "username = ? and itinerary_id = ?", new String[]{username, itineraryId});

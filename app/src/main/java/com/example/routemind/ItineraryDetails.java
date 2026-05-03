@@ -2,6 +2,7 @@ package com.example.routemind;
 
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RatingBar;
@@ -11,15 +12,24 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class ItineraryDetails extends AppCompatActivity {
 
+    private static final String TAG = "ItineraryDetails";
     RatingBar ratingBar;
     EditText etReview;
     Button btnSubmit, btnBack;
     TextView tvDestination;
     DBHelper DB;
+    DatabaseHelper dbHelper;
     String itineraryId;
     boolean isUpdate = false;
+    FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +41,15 @@ public class ItineraryDetails extends AppCompatActivity {
         etReview = findViewById(R.id.et_review);
         btnSubmit = findViewById(R.id.btn_submit_rating);
         btnBack = findViewById(R.id.btn_back);
-        tvDestination = findViewById(R.id.tv_details_header); // Using header as destination title
+        tvDestination = findViewById(R.id.tv_details_header);
         DB = new DBHelper(this);
+        dbHelper = new DatabaseHelper(this);
+        
+        try {
+            firestore = FirebaseFirestore.getInstance();
+        } catch (Exception e) {
+            Log.e(TAG, "Firestore initialization failed: " + e.getMessage());
+        }
 
         String destination = getIntent().getStringExtra("destination");
         itineraryId = getIntent().getStringExtra("ITINERARY_ID");
@@ -40,7 +57,6 @@ public class ItineraryDetails extends AppCompatActivity {
         if (destination != null) tvDestination.setText(destination);
         if (itineraryId == null) itineraryId = "default_trip";
 
-        // Check if user has already reviewed this itinerary
         checkExistingReview();
 
         btnBack.setOnClickListener(v -> finish());
@@ -48,10 +64,16 @@ public class ItineraryDetails extends AppCompatActivity {
         btnSubmit.setOnClickListener(v -> {
             float rating = ratingBar.getRating();
             String review = etReview.getText().toString();
-            String username = MainActivity.sessionEmail;
+            String userEmail = MainActivity.sessionEmail;
+            
+            if (userEmail == null || userEmail.isEmpty()) {
+                userEmail = "anonymous@routemind.com";
+            }
 
-            if (username == null || username.isEmpty()) {
-                username = "Anonymous";
+            // Fetch User Data (Name)
+            String userName = dbHelper.getName(userEmail);
+            if (userName == null || userName.isEmpty()) {
+                userName = "Guest User";
             }
 
             if (rating == 0) {
@@ -59,20 +81,45 @@ public class ItineraryDetails extends AppCompatActivity {
                 return;
             }
 
+            // 1. Save to SQLite (Local)
             boolean success;
             if (isUpdate) {
-                success = DB.updateReview(username, itineraryId, rating, review);
+                success = DB.updateReview(userEmail, userName, itineraryId, rating, review);
             } else {
-                success = DB.insertReview(username, itineraryId, rating, review);
+                success = DB.insertReview(userEmail, userName, itineraryId, rating, review);
+            }
+
+            // 2. Save to Firestore (Remote) - Creates collection/doc if doesn't exist
+            if (firestore != null) {
+                syncToFirestore(userEmail, userName, itineraryId, rating, review);
             }
 
             if (success) {
                 Toast.makeText(this, isUpdate ? "Review updated!" : "Review submitted!", Toast.LENGTH_SHORT).show();
                 finish();
             } else {
-                Toast.makeText(this, "Operation failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Local save failed", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void syncToFirestore(String email, String name, String itinId, float rating, String reviewText) {
+        Map<String, Object> reviewData = new HashMap<>();
+        reviewData.put("email", email);
+        reviewData.put("userName", name);
+        reviewData.put("itineraryId", itinId);
+        reviewData.put("rating", rating);
+        reviewData.put("review", reviewText);
+        reviewData.put("timestamp", com.google.firebase.Timestamp.now());
+
+        // Document ID is a combination of email and itinerary to allow updates
+        String docId = email.replace(".", "_") + "_" + itinId;
+
+        firestore.collection("reviews")
+                .document(docId)
+                .set(reviewData, SetOptions.merge()) // merge() creates the "part" (fields/doc/collection) if missing
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Sync to Firestore successful"))
+                .addOnFailureListener(e -> Log.e(TAG, "Sync to Firestore failed", e));
     }
 
     private void checkExistingReview() {
@@ -81,9 +128,8 @@ public class ItineraryDetails extends AppCompatActivity {
 
         Cursor cursor = DB.getUserReview(username, itineraryId);
         if (cursor.moveToFirst()) {
-            // Index 3 is rating, index 4 is review in schema
-            float existingRating = cursor.getFloat(3);
-            String existingReview = cursor.getString(4);
+            float existingRating = cursor.getFloat(4);
+            String existingReview = cursor.getString(5);
 
             ratingBar.setRating(existingRating);
             etReview.setText(existingReview);

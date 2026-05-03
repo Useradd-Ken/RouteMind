@@ -2,6 +2,7 @@ package com.example.routemind;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -11,14 +12,21 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignUpActivity extends AppCompatActivity {
 
+    private static final String TAG = "SignUpActivity";
     EditText username, email, password, repassword;
     Button signup;
     TextView login;
     DatabaseHelper dbHelper;
     FirebaseAuth mAuth;
+    FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +43,9 @@ public class SignUpActivity extends AppCompatActivity {
         
         try {
             mAuth = FirebaseAuth.getInstance();
+            firestore = FirebaseFirestore.getInstance();
         } catch (Exception e) {
-            // Firebase not configured
+            Log.e(TAG, "Firebase initialization failed: " + e.getMessage());
         }
 
         signup.setOnClickListener(new View.OnClickListener() {
@@ -57,8 +66,15 @@ public class SignUpActivity extends AppCompatActivity {
                         mAuth.createUserWithEmailAndPassword(mail, pass)
                                 .addOnCompleteListener(SignUpActivity.this, task -> {
                                     if (task.isSuccessful()) {
+                                        // Save to Local SQLite
                                         dbHelper.insertUserData(user, mail, pass);
                                         dbHelper.addUserProfile(mail, user);
+                                        
+                                        // Sync to Remote Firestore
+                                        if (firestore != null) {
+                                            syncUserToFirestore(mail, user);
+                                        }
+                                        
                                         Toast.makeText(SignUpActivity.this, "Registered successfully", Toast.LENGTH_SHORT).show();
                                         finish();
                                     } else {
@@ -89,5 +105,20 @@ public class SignUpActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    private void syncUserToFirestore(String email, String name) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("email", email);
+        userMap.put("name", name);
+        userMap.put("createdAt", com.google.firebase.Timestamp.now());
+
+        String docId = email.replace(".", "_");
+
+        firestore.collection("users")
+                .document(docId)
+                .set(userMap, SetOptions.merge()) // Creates the 'users' collection and document if they don't exist
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "User data synced to Firestore"))
+                .addOnFailureListener(e -> Log.e(TAG, "User data sync failed", e));
     }
 }

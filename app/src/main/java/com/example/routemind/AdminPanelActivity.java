@@ -88,10 +88,14 @@ public class AdminPanelActivity extends AppCompatActivity {
             builder.append("No reviews found.");
         } else {
             while (cursor.moveToNext()) {
-                builder.append("User: ").append(cursor.getString(1)).append("\n");
-                builder.append("Rating: ").append(cursor.getFloat(3)).append(" stars\n");
-                builder.append("Review: ").append(cursor.getString(4)).append("\n");
-                builder.append("Time: ").append(cursor.getString(5)).append("\n");
+                // Indices updated based on new schema in DBHelper:
+                // 0: id, 1: username, 2: user_name, 3: itinerary_id, 4: rating, 5: review, 6: timestamp
+                builder.append("User Email: ").append(cursor.getString(1)).append("\n");
+                builder.append("User Name: ").append(cursor.getString(2)).append("\n");
+                builder.append("Itinerary: ").append(cursor.getString(3)).append("\n");
+                builder.append("Rating: ").append(cursor.getFloat(4)).append(" stars\n");
+                builder.append("Review: ").append(cursor.getString(5)).append("\n");
+                builder.append("Time: ").append(cursor.getString(6)).append("\n");
                 builder.append("--------------------\n");
             }
         }
