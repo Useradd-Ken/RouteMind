@@ -43,9 +43,7 @@
         <activity
             android:name=".UserProfile"
             android:exported="false" />
-        <activity
-            android:name=".sqlite"
-            android:exported="false" />
+
         <activity
             android:name=".ItineraryDetails"
             android:exported="false" />
