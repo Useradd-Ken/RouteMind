@@ -1,14 +1,10 @@
 package com.example.routemind;
 
-import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RatingBar;
-<<<<<<< Updated upstream
-=======
 import android.widget.TextView;
->>>>>>> Stashed changes
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -26,15 +22,10 @@ public class ItineraryDetails extends AppCompatActivity {
 
     RatingBar ratingBar;
     EditText etReview;
-<<<<<<< Updated upstream
-    Button btnSubmit, btnBack;
-    DBHelper DB;
-=======
     TextView tvDestination, tvFullItinerary;
     Button btnSubmit, btnBack;
     FirebaseFirestore db;
     FirebaseAuth mAuth;
->>>>>>> Stashed changes
     String itineraryId;
     boolean isUpdate = false;
 
@@ -44,18 +35,6 @@ public class ItineraryDetails extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_itinerary_details);
 
-<<<<<<< Updated upstream
-        ratingBar = findViewById(R.id.rating_bar);
-        etReview = findViewById(R.id.et_review);
-        btnSubmit = findViewById(R.id.btn_submit_rating);
-        btnBack = findViewById(R.id.btn_back);
-        DB = new DBHelper(this);
-
-        itineraryId = getIntent().getStringExtra("ITINERARY_ID");
-        if (itineraryId == null) itineraryId = "default_trip";
-
-        // Check if user has already reviewed this itinerary
-=======
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
@@ -75,28 +54,18 @@ public class ItineraryDetails extends AppCompatActivity {
         if (destination != null) tvDestination.setText(destination);
         if (itineraryText != null) tvFullItinerary.setText(itineraryText);
 
-        // Check if user has already reviewed this itinerary in Firestore
->>>>>>> Stashed changes
         checkExistingReview();
 
         btnBack.setOnClickListener(v -> finish());
 
         btnSubmit.setOnClickListener(v -> {
             float rating = ratingBar.getRating();
-<<<<<<< Updated upstream
-            String review = etReview.getText().toString();
-            String username = MainActivity.sessionEmail;
-
-            if (username == null || username.isEmpty()) {
-                username = "Anonymous";
-=======
             String review = etReview.getText().toString().trim();
             FirebaseUser currentUser = mAuth.getCurrentUser();
 
             if (currentUser == null) {
                 Toast.makeText(this, "Please log in to submit a review", Toast.LENGTH_SHORT).show();
                 return;
->>>>>>> Stashed changes
             }
 
             if (rating == 0) {
@@ -104,46 +73,11 @@ public class ItineraryDetails extends AppCompatActivity {
                 return;
             }
 
-<<<<<<< Updated upstream
-            boolean success;
-            if (isUpdate) {
-                success = DB.updateReview(username, itineraryId, rating, review);
-            } else {
-                success = DB.insertReview(username, itineraryId, rating, review);
-            }
-
-            if (success) {
-                Toast.makeText(this, isUpdate ? "Review updated!" : "Review submitted!", Toast.LENGTH_SHORT).show();
-                finish();
-            } else {
-                Toast.makeText(this, "Operation failed", Toast.LENGTH_SHORT).show();
-            }
-=======
             saveReviewToFirestore(currentUser.getUid(), currentUser.getEmail(), rating, review);
->>>>>>> Stashed changes
         });
     }
 
     private void checkExistingReview() {
-<<<<<<< Updated upstream
-        String username = MainActivity.sessionEmail;
-        if (username == null || username.isEmpty()) return;
-
-        Cursor cursor = DB.getUserReview(username, itineraryId);
-        if (cursor.moveToFirst()) {
-            // Review exists - index 3 is rating, index 4 is review in version 6 schema
-            float existingRating = cursor.getFloat(3);
-            String existingReview = cursor.getString(4);
-
-            ratingBar.setRating(existingRating);
-            etReview.setText(existingReview);
-            btnSubmit.setText("Update Feedback");
-            isUpdate = true;
-        }
-        cursor.close();
-    }
-}
-=======
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
@@ -184,4 +118,3 @@ public class ItineraryDetails extends AppCompatActivity {
                 });
     }
 }
->>>>>>> Stashed changes

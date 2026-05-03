@@ -21,12 +21,6 @@
             </intent-filter>
         </activity>
         <activity
-<<<<<<< Updated upstream
-            android:name=".AdminPanelActivity"
-            android:exported="false" />
-        <activity
-=======
->>>>>>> Stashed changes
             android:name=".SignUpActivity"
             android:exported="false" />
         <activity

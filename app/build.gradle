@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace 'com.example.routemind'
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.example.routemind"
@@ -36,8 +34,6 @@ dependencies {
     implementation libs.material
     implementation libs.activity
     implementation libs.constraintlayout
-<<<<<<< Updated upstream
-=======
     implementation libs.generativeai
     implementation "com.google.guava:guava:33.0.0-android"
     
@@ -47,7 +43,6 @@ dependencies {
     implementation libs.firebase.firestore
     implementation libs.firebase.database
 
->>>>>>> Stashed changes
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

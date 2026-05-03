@@ -4,23 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-<<<<<<< Updated upstream
-import android.widget.EditText;
-=======
->>>>>>> Stashed changes
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-<<<<<<< Updated upstream
-public class SignUpActivity extends AppCompatActivity {
-
-    EditText username, email, password, repassword;
-    Button signup;
-    TextView login;
-    DBHelper DB;
-=======
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -36,64 +24,12 @@ public class SignUpActivity extends AppCompatActivity {
     private TextView tvLogin;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
->>>>>>> Stashed changes
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
 
-<<<<<<< Updated upstream
-        username = findViewById(R.id.etUsername);
-        email = findViewById(R.id.etEmail);
-        password = findViewById(R.id.etPassword);
-        repassword = findViewById(R.id.etConfirmPassword);
-        signup = findViewById(R.id.btnSignup);
-        login = findViewById(R.id.tvLogin);
-        DB = new DBHelper(this);
-
-        signup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String user = username.getText().toString();
-                String mail = email.getText().toString();
-                String pass = password.getText().toString();
-                String repass = repassword.getText().toString();
-
-                if (user.equals("") || mail.equals("") || pass.equals("") || repass.equals(""))
-                    Toast.makeText(SignUpActivity.this, "Please enter all the fields", Toast.LENGTH_SHORT).show();
-                else {
-                    if (pass.equals(repass)) {
-                        Boolean checkuser = DB.checkUsername(user);
-                        if (!checkuser) {
-                            Boolean insert = DB.insertData(user, mail, pass);
-                            if (insert) {
-                                Toast.makeText(SignUpActivity.this, "Registered successfully", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                startActivity(intent);
-                            } else {
-                                Toast.makeText(SignUpActivity.this, "Registration failed", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            Toast.makeText(SignUpActivity.this, "User already exists! please sign in", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Toast.makeText(SignUpActivity.this, "Passwords not matching", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        });
-
-        login.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-            }
-        });
-    }
-}
-=======
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
@@ -160,4 +96,3 @@ public class SignUpActivity extends AppCompatActivity {
                 });
     }
 }
->>>>>>> Stashed changes

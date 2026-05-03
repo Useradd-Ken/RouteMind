@@ -47,19 +47,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void insertSampleData(SQLiteDatabase db) {
-        saveTripToDb(db, "Tokyo, Japan", "12/05/2024", "18/05/2024", "50000", "Anime, Food", 
-                "Day 1: Shibuya Crossing and Hachiko Statue.\n" +
-                "Day 2: Akihabara Electric Town and Maid Cafes.\n" +
-                "Day 3: Senso-ji Temple and Nakamise Street.\n" +
-                "Day 4: Ghibli Museum and Inokashira Park.\n" +
-                "Day 5: Harajuku Takeshita Street and Meiji Jingu Shrine.");
+        saveTripToDb(db, "Palawan, Philippines", "12/05/2024", "16/05/2024", "15000", "Nature, Adventure", 
+                "Day 1: Puerto Princesa Underground River Tour.\n" +
+                "Day 2: Travel to El Nido, Nacpan Beach sunset.\n" +
+                "Day 3: El Nido Tour A (Big Lagoon, Secret Lagoon).\n" +
+                "Day 4: El Nido Tour C (Hidden Beach, Helicopter Island).\n" +
+                "Day 5: Relax at Las Cabanas Beach and Departure.");
 
-        saveTripToDb(db, "Paris, France", "20/06/2024", "25/06/2024", "80000", "Art, History", 
-                "Day 1: Eiffel Tower and Seine River Cruise.\n" +
-                "Day 2: Louvre Museum and Tuileries Garden.\n" +
-                "Day 3: Montmartre and Sacré-Cœur Basilica.\n" +
-                "Day 4: Notre-Dame Cathedral and Latin Quarter.\n" +
-                "Day 5: Palace of Versailles Day Trip.");
+        saveTripToDb(db, "Cebu, Philippines", "20/06/2024", "24/06/2024", "12000", "Culture, Sea", 
+                "Day 1: Cebu City Tour (Magellan's Cross, Fort San Pedro).\n" +
+                "Day 2: Whale Shark Watching in Oslob and Sumilon Island.\n" +
+                "Day 3: Canyoneering at Kawasan Falls.\n" +
+                "Day 4: Moalboal Island Hopping (Sardine Run, Sea Turtles).\n" +
+                "Day 5: Sirao Garden and Temple of Leah.");
     }
 
     private void saveTripToDb(SQLiteDatabase db, String destination, String startDate, String endDate, String budget, String interests, String itinerary) {

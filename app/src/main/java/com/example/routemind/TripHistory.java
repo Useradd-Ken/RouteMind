@@ -1,8 +1,13 @@
 package com.example.routemind;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,26 +19,25 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class TripHistory extends AppCompatActivity {
 
+    LinearLayout llTripList;
+    DatabaseHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_trip_history);
         
+        dbHelper = new DatabaseHelper(this);
+        llTripList = findViewById(R.id.llTripList);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Handle card clicks to open details with unique IDs
-        MaterialCardView card1 = findViewById(R.id.card_itinerary1);
-        MaterialCardView card2 = findViewById(R.id.card_itinerary2);
-        MaterialCardView card3 = findViewById(R.id.card_itinerary3);
-
-        if (card1 != null) card1.setOnClickListener(v -> openDetails("palawan_trip_1"));
-        if (card2 != null) card2.setOnClickListener(v -> openDetails("cebu_trip_1"));
-        if (card3 != null) card3.setOnClickListener(v -> openDetails("baguio_trip_1"));
+        loadTripHistory();
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_trip_history);
@@ -67,13 +71,8 @@ public class TripHistory extends AppCompatActivity {
         });
     }
 
-<<<<<<< Updated upstream
-    private void openDetails(String itineraryId) {
-        Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
-        intent.putExtra("ITINERARY_ID", itineraryId);
-        startActivity(intent);
-=======
     private void loadTripHistory() {
+        if (llTripList == null) return;
         llTripList.removeAllViews();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.query("trips", null, null, null, null, null, "id DESC");
@@ -91,8 +90,8 @@ public class TripHistory extends AppCompatActivity {
                 TextView tvTitle = tripView.findViewById(R.id.tv_trip_title);
                 TextView tvDate = tripView.findViewById(R.id.tv_trip_date);
                 
-                tvTitle.setText(destination);
-                tvDate.setText(startDate + " - " + endDate);
+                if (tvTitle != null) tvTitle.setText(destination);
+                if (tvDate != null) tvDate.setText(startDate + " - " + endDate);
 
                 tripView.setOnClickListener(v -> {
                     Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
@@ -111,6 +110,5 @@ public class TripHistory extends AppCompatActivity {
             tvNoTrips.setPadding(50, 50, 50, 50);
             llTripList.addView(tvNoTrips);
         }
->>>>>>> Stashed changes
     }
 }
