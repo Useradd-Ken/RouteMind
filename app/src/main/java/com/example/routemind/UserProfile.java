@@ -16,16 +16,28 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class UserProfile extends AppCompatActivity {
 
+    DatabaseHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_user_profile);
 
-        // Fetch session email from MainActivity
+        dbHelper = new DatabaseHelper(this);
+
         EditText editEmail = findViewById(R.id.edit_email);
+        EditText editName = findViewById(R.id.edit_name);
+
+        // Fetch session email from MainActivity
         if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
             editEmail.setText(MainActivity.sessionEmail);
+            
+            // Fetch name from SQLite
+            String name = dbHelper.getName(MainActivity.sessionEmail);
+            if (name != null) {
+                editName.setText(name);
+            }
         }
         
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -36,7 +48,11 @@ public class UserProfile extends AppCompatActivity {
 
         Button btnSave = findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v -> {
-            Toast.makeText(UserProfile.this, "Profile and Password Updated Successfully!", Toast.LENGTH_SHORT).show();
+            String updatedName = editName.getText().toString();
+            if (MainActivity.sessionEmail != null) {
+                dbHelper.addUser(MainActivity.sessionEmail, updatedName);
+                Toast.makeText(UserProfile.this, "Profile and Password Updated Successfully!", Toast.LENGTH_SHORT).show();
+            }
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);

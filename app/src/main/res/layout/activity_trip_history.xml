@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="24dp"
         android:text="Trip History"
-        android:textColor="@color/primary_color"
+        android:textColor="#102955"
         android:textSize="32sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -28,219 +28,22 @@
         app:layout_constraintTop_toBottomOf="@id/tv_history_header">
 
         <LinearLayout
+            android:id="@+id/llTripList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- Itinerary Input 1 -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_itinerary1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:id="@+id/iv_trip_icon1"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/nav_item_background"
-                        android:backgroundTint="#F0F4F8"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_maps"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/primary_color" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="Summer Vacation - Palawan"
-                        android:textColor="@color/primary_color"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/iv_trip_icon1"
-                        app:layout_constraintTop_toTopOf="@id/iv_trip_icon1" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Completed on July 15, 2023"
-                        android:textColor="#757575"
-                        android:textSize="14sp"
-                        app:layout_constraintStart_toStartOf="@id/iv_trip_icon1"
-                        app:layout_constraintTop_toBottomOf="@id/iv_trip_icon1"
-                        android:layout_marginTop="8dp"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View Details →"
-                        android:textColor="@color/primary_color"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/iv_trip_icon1"
-                        android:layout_marginTop="8dp"/>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Itinerary Input 2 -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_itinerary2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:id="@+id/iv_trip_icon2"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/nav_item_background"
-                        android:backgroundTint="#F0F4F8"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_maps"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/primary_color" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="Business Trip - Cebu"
-                        android:textColor="@color/primary_color"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/iv_trip_icon2"
-                        app:layout_constraintTop_toTopOf="@id/iv_trip_icon2" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Completed on August 22, 2023"
-                        android:textColor="#757575"
-                        android:textSize="14sp"
-                        app:layout_constraintStart_toStartOf="@id/iv_trip_icon2"
-                        app:layout_constraintTop_toBottomOf="@id/iv_trip_icon2"
-                        android:layout_marginTop="8dp"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View Details →"
-                        android:textColor="@color/primary_color"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/iv_trip_icon2"
-                        android:layout_marginTop="8dp"/>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Itinerary Input 3 -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_itinerary3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:id="@+id/iv_trip_icon3"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/nav_item_background"
-                        android:backgroundTint="#F0F4F8"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_maps"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/primary_color" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="Family Outing - Baguio"
-                        android:textColor="@color/primary_color"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/iv_trip_icon3"
-                        app:layout_constraintTop_toTopOf="@id/iv_trip_icon3" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Completed on Sept 10, 2023"
-                        android:textColor="#757575"
-                        android:textSize="14sp"
-                        app:layout_constraintStart_toStartOf="@id/iv_trip_icon3"
-                        app:layout_constraintTop_toBottomOf="@id/iv_trip_icon3"
-                        android:layout_marginTop="8dp"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View Details →"
-                        android:textColor="@color/primary_color"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/iv_trip_icon3"
-                        android:layout_marginTop="8dp"/>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-        </LinearLayout>
+            android:padding="16dp" />
     </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:background="@android:color/white"
-        app:itemIconSize="26dp"
-        app:itemIconTint="@color/nav_background"
-        app:itemTextColor="@color/nav_background"
-        app:labelVisibilityMode="unlabeled"
-        app:elevation="16dp"
+        android:layout_height="wrap_content"
+        android:background="#102955"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemRippleColor="#33FFFFFF"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

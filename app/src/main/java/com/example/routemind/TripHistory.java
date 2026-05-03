@@ -1,8 +1,13 @@
 package com.example.routemind;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,31 +20,25 @@ import com.google.android.material.card.MaterialCardView;
 
 public class TripHistory extends AppCompatActivity {
 
+    LinearLayout llTripList;
+    DatabaseHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_trip_history);
         
+        dbHelper = new DatabaseHelper(this);
+        llTripList = findViewById(R.id.llTripList);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Handle card clicks to open details
-        MaterialCardView card1 = findViewById(R.id.card_itinerary1);
-        MaterialCardView card2 = findViewById(R.id.card_itinerary2);
-        MaterialCardView card3 = findViewById(R.id.card_itinerary3);
-
-        View.OnClickListener detailsListener = v -> {
-            Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
-            startActivity(intent);
-        };
-
-        if (card1 != null) card1.setOnClickListener(detailsListener);
-        if (card2 != null) card2.setOnClickListener(detailsListener);
-        if (card3 != null) card3.setOnClickListener(detailsListener);
+        loadTripHistory();
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_trip_history);
@@ -48,28 +47,62 @@ public class TripHistory extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
                 startActivity(new Intent(getApplicationContext(), HomePage.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_activities) {
                 startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_maps) {
                 startActivity(new Intent(getApplicationContext(), TripActivity.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_trip_history) {
                 return true;
             } else if (id == R.id.nav_user_profile) {
                 startActivity(new Intent(getApplicationContext(), UserProfile.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             }
             return false;
         });
+    }
+
+    private void loadTripHistory() {
+        llTripList.removeAllViews();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.query("trips", null, null, null, null, null, "id DESC");
+
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                String destination = cursor.getString(cursor.getColumnIndexOrThrow("destination"));
+                String startDate = cursor.getString(cursor.getColumnIndexOrThrow("start_date"));
+                String endDate = cursor.getString(cursor.getColumnIndexOrThrow("end_date"));
+                String itinerary = cursor.getString(cursor.getColumnIndexOrThrow("itinerary"));
+
+                View tripView = LayoutInflater.from(this).inflate(R.layout.item_trip_history, llTripList, false);
+                
+                TextView tvTitle = tripView.findViewById(R.id.tv_trip_title);
+                TextView tvDate = tripView.findViewById(R.id.tv_trip_date);
+                
+                tvTitle.setText(destination);
+                tvDate.setText(startDate + " - " + endDate);
+
+                tripView.setOnClickListener(v -> {
+                    Intent intent = new Intent(TripHistory.this, ItineraryDetails.class);
+                    intent.putExtra("itinerary", itinerary);
+                    intent.putExtra("destination", destination);
+                    startActivity(intent);
+                });
+
+                llTripList.addView(tripView);
+            } while (cursor.moveToNext());
+            cursor.close();
+        } else {
+            TextView tvNoTrips = new TextView(this);
+            tvNoTrips.setText("No trips found in history.");
+            tvNoTrips.setPadding(50, 50, 50, 50);
+            llTripList.addView(tvNoTrips);
+        }
     }
 }
