@@ -114,7 +114,7 @@
                 android:layout_marginTop="32dp"
                 android:layout_marginBottom="32dp"
                 android:backgroundTint="@color/nav_background"
-                android:text="Book This Tour"
+                android:text="Generate Itinerary"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 app:cornerRadius="12dp" />

@@ -59,7 +59,7 @@ public class BudgetTracker extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private static final String PREF_NAME = "BudgetPrefs";
     
-    private static final String GEMINI_API_KEY = "AIzaSyB6FDB-J0M6nVAzVuWQdh3qdakImgAmXFw";
+    private static final String GEMINI_API_KEY = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,7 +156,8 @@ public class BudgetTracker extends AppCompatActivity {
             "Provide accurate and current market prices. If no options are available under the budget, suggest the closest available options even if they exceed the budget. " +
             "Return a JSON array of objects. Each object MUST have: " +
             "\"title\", \"description\", \"price\" (as a number), \"itinerary\" (a brief 1-sentence summary of what is included, NOT a day-by-day list), " +
-            "and \"imageUrl\" (generate a valid URL using this pattern: 'https://loremflickr.com/800/600/" + dest.toLowerCase().replace(" ", "") + "," + interests.toLowerCase().replace(" ", "") + "'). " +
+            "and \"imageUrl\". For \"imageUrl\", generate a valid URL using this pattern: 'https://loremflickr.com/800/600/[keywords]'. " +
+            "Replace [keywords] with specific descriptive tags related to the suggested landmark or activity (e.g., if you suggest White Beach in Boracay, use 'boracay,whitebeach'; if Tagbilaran Bohol, use 'bohol,tagbilaran'). " +
             "Return ONLY the JSON array, no other text.";
 
         Content content = new Content.Builder().addText(prompt).build();

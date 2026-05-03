@@ -81,7 +81,7 @@ public class HomePage extends AppCompatActivity {
     private String currentDestination = "Manila";
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
-    private static final String GEMINI_API_KEY = "AIzaSyDqx0-E-Q_QFKODuJswSp912UXqcdtsO44";
+    private static final String GEMINI_API_KEY = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
