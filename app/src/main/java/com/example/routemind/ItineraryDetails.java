@@ -58,23 +58,25 @@ public class ItineraryDetails extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
 
-        btnSubmit.setOnClickListener(v -> {
-            float rating = ratingBar.getRating();
-            String review = etReview.getText().toString().trim();
-            FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (btnSubmit != null) {
+            btnSubmit.setOnClickListener(v -> {
+                float rating = ratingBar.getRating();
+                String review = etReview.getText().toString().trim();
+                FirebaseUser currentUser = mAuth.getCurrentUser();
 
-            if (currentUser == null) {
-                Toast.makeText(this, "Please log in to submit a review", Toast.LENGTH_SHORT).show();
-                return;
-            }
+                if (currentUser == null) {
+                    Toast.makeText(this, "Please log in to submit a review", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-            if (rating == 0) {
-                Toast.makeText(this, "Please provide a rating", Toast.LENGTH_SHORT).show();
-                return;
-            }
+                if (rating == 0) {
+                    Toast.makeText(this, "Please provide a rating", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-            saveReviewToFirestore(currentUser.getUid(), currentUser.getEmail(), rating, review);
-        });
+                saveReviewToFirestore(currentUser.getUid(), currentUser.getEmail(), rating, review);
+            });
+        }
     }
 
     private void checkExistingReview() {
@@ -91,7 +93,7 @@ public class ItineraryDetails extends AppCompatActivity {
 
                         if (rating != null) ratingBar.setRating(rating.floatValue());
                         etReview.setText(review);
-                        btnSubmit.setText("Update Feedback");
+                        if (btnSubmit != null) btnSubmit.setText("Update Feedback");
                         isUpdate = true;
                     }
                 });

@@ -28,6 +28,7 @@ public class UserProfile extends AppCompatActivity {
     Button btnSave, btnLogout;
     FirebaseAuth mAuth;
     FirebaseFirestore db;
+    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +38,7 @@ public class UserProfile extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        dbHelper = new DatabaseHelper(this);
 
         editEmail = findViewById(R.id.edit_email);
         editName = findViewById(R.id.edit_name);
@@ -56,17 +58,24 @@ public class UserProfile extends AppCompatActivity {
                             String fullName = documentSnapshot.getString("fullName");
                             String email = documentSnapshot.getString("email");
                             
-                            // Use fullName if username is null
                             String displayName = (username != null) ? username : fullName;
                             
                             editName.setText(displayName);
                             editEmail.setText(email);
-                            tvProfileName.setText(displayName);
+                            if (tvProfileName != null) tvProfileName.setText(displayName);
                         }
                     })
                     .addOnFailureListener(e -> {
-                        Toast.makeText(UserProfile.this, "Error fetching profile", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(UserProfile.this, "Error fetching profile from Cloud", Toast.LENGTH_SHORT).show();
                     });
+        } else if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
+            // Fallback to local SQLite if not logged into Firebase
+            editEmail.setText(MainActivity.sessionEmail);
+            String name = dbHelper.getName(MainActivity.sessionEmail);
+            if (name != null) {
+                editName.setText(name);
+                if (tvProfileName != null) tvProfileName.setText(name);
+            }
         }
         
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -76,25 +85,31 @@ public class UserProfile extends AppCompatActivity {
         });
 
         btnSave.setOnClickListener(v -> {
-            if (currentUser != null) {
-                String updatedName = editName.getText().toString().trim();
-                String newPassword = editPassword.getText().toString().trim();
+            String updatedName = editName.getText().toString().trim();
+            String newPassword = editPassword.getText().toString().trim();
 
-                // 1. Update Firestore Profile Name
+            // 1. Update Local SQLite
+            if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
+                dbHelper.addUser(MainActivity.sessionEmail, updatedName);
+            }
+
+            // 2. Update Firebase
+            if (currentUser != null) {
+                // Update Firestore
                 Map<String, Object> updates = new HashMap<>();
                 updates.put("username", updatedName);
 
                 db.collection("users").document(currentUser.getUid())
                         .update(updates)
                         .addOnSuccessListener(aVoid -> {
-                            tvProfileName.setText(updatedName);
-                            Toast.makeText(UserProfile.this, "Name Updated Successfully!", Toast.LENGTH_SHORT).show();
+                            if (tvProfileName != null) tvProfileName.setText(updatedName);
+                            Toast.makeText(UserProfile.this, "Cloud Profile Updated!", Toast.LENGTH_SHORT).show();
                         })
                         .addOnFailureListener(e -> {
-                            Toast.makeText(UserProfile.this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(UserProfile.this, "Cloud Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         });
 
-                // 2. Update Password if provided
+                // Update Password if provided
                 if (!newPassword.isEmpty()) {
                     if (newPassword.length() < 6) {
                         Toast.makeText(UserProfile.this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
@@ -103,18 +118,20 @@ public class UserProfile extends AppCompatActivity {
                                 .addOnCompleteListener(task -> {
                                     if (task.isSuccessful()) {
                                         Toast.makeText(UserProfile.this, "Password Updated!", Toast.LENGTH_SHORT).show();
-                                        editPassword.setText(""); // Clear field
+                                        editPassword.setText("");
                                     } else {
                                         Toast.makeText(UserProfile.this, "Password update failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                                     }
                                 });
                     }
                 }
+            } else {
+                Toast.makeText(UserProfile.this, "Local Profile Updated!", Toast.LENGTH_SHORT).show();
             }
         });
 
         btnLogout.setOnClickListener(v -> {
-            mAuth.signOut();
+            if (mAuth != null) mAuth.signOut();
             MainActivity.sessionEmail = "";
             Toast.makeText(UserProfile.this, "Logged out successfully", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(UserProfile.this, MainActivity.class);
@@ -128,27 +145,28 @@ public class UserProfile extends AppCompatActivity {
 
     private void setupNavigation() {
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_user_profile);
-
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                startActivity(new Intent(getApplicationContext(), HomePage.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_maps) {
-                startActivity(new Intent(getApplicationContext(), TripActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(getApplicationContext(), TripHistory.class));
-                finish();
-                return true;
-            } else return id == R.id.nav_user_profile;
-        });
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_user_profile);
+            bottomNavigationView.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.nav_home) {
+                    startActivity(new Intent(getApplicationContext(), HomePage.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_activities) {
+                    startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_maps) {
+                    startActivity(new Intent(getApplicationContext(), TripActivity.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_trip_history) {
+                    startActivity(new Intent(getApplicationContext(), TripHistory.class));
+                    finish();
+                    return true;
+                } else return id == R.id.nav_user_profile;
+            });
+        }
     }
 }

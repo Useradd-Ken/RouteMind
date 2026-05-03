@@ -17,9 +17,10 @@ import com.google.firebase.auth.FirebaseUser;
 public class MainActivity extends AppCompatActivity {
 
     EditText etUsername, etPassword;
-    Button btnLogin;
+    Button btnLogin, btnGoogleLogin;
     TextView tvResult, tvSignup;
     FirebaseAuth mAuth;
+    DatabaseHelper dbHelper;
 
     public static String sessionEmail = "";
 
@@ -28,6 +29,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize Local Database
+        dbHelper = new DatabaseHelper(this);
+
+        // Initialize Firebase
         try {
             if (FirebaseApp.getApps(this).isEmpty()) {
                 FirebaseApp.initializeApp(this);
@@ -37,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
             // Graceful failure if google-services.json is missing
         }
         
+        // Auto-login check
         if (mAuth != null) {
             FirebaseUser currentUser = mAuth.getCurrentUser();
             if (currentUser != null) {
@@ -48,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         btnLogin   = findViewById(R.id.btnLogin);
+        btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         tvResult   = findViewById(R.id.tvResult);
         tvSignup   = findViewById(R.id.tvSignup);
 
@@ -58,15 +65,27 @@ public class MainActivity extends AppCompatActivity {
             if (email.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(MainActivity.this, "Please enter all fields", Toast.LENGTH_SHORT).show();
             } else {
-                if (email.equals("admin@routemind.com") && pass.equals("admin123")) {
-                    sessionEmail = "admin";
+                // Admin / Static Login Logic (Combined from both sides)
+                if ((email.equals("admin@routemind.com") && pass.equals("admin123")) || 
+                    (email.equals("admin") && pass.equals("1234"))) {
+                    
+                    sessionEmail = "admin@routemind.com";
                     navigateToHome();
                     return;
                 }
 
+                // Local Fallback shortcut (from main)
+                if (email.contains("@") && pass.equals("1234")) {
+                    sessionEmail = email;
+                    navigateToHome();
+                    return;
+                }
+
+                // Default Firebase Login
                 if (mAuth != null) {
                     loginUser(email, pass);
                 } else {
+                    tvResult.setText("Firebase not configured. Use admin login.");
                     Toast.makeText(MainActivity.this, "Firebase not configured. Use admin login.", Toast.LENGTH_LONG).show();
                 }
             }
@@ -75,6 +94,12 @@ public class MainActivity extends AppCompatActivity {
         tvSignup.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, SignUpActivity.class));
         });
+
+        if (btnGoogleLogin != null) {
+            btnGoogleLogin.setOnClickListener(v -> {
+                Toast.makeText(MainActivity.this, "Google Sign-In is currently disabled. Use admin login.", Toast.LENGTH_SHORT).show();
+            });
+        }
     }
 
     private void loginUser(String email, String password) {
@@ -86,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
                         navigateToHome();
                     } else {
+                        tvResult.setText("Login failed: " + task.getException().getMessage());
                         Toast.makeText(MainActivity.this, "Login failed: " + task.getException().getMessage(),
                                 Toast.LENGTH_SHORT).show();
                     }
