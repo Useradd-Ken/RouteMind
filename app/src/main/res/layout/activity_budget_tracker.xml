@@ -43,7 +43,7 @@
                     android:text="Reset All"
                     android:textAllCaps="false"
                     android:textColor="@android:color/holo_red_dark"
-                    app:icon="@android:drawable/ic_menu_delete"
+                    app:icon="@drawable/ic_delete"
                     app:iconTint="@android:color/holo_red_dark" />
             </RelativeLayout>
 
@@ -51,7 +51,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                app:cardBackgroundColor="@color/primary_color"
+                app:cardBackgroundColor="@color/nav_background"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="4dp">
 
@@ -77,7 +77,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_alignParentEnd="true"
-                            android:src="@android:drawable/ic_menu_edit"
+                            android:src="@drawable/ic_edit"
                             android:visibility="gone"
                             app:tint="@color/white" />
                     </RelativeLayout>
@@ -171,19 +171,42 @@
                     android:text="Set Budget"
                     android:textAllCaps="false"
                     app:cornerRadius="12dp"
-                    app:icon="@android:drawable/ic_input_add" />
+                    app:icon="@drawable/ic_add" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_add_expense_top"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:backgroundTint="@color/primary_color"
+                    android:backgroundTint="@color/nav_background"
                     android:text="Log Expense"
                     android:textAllCaps="false"
                     app:cornerRadius="12dp"
-                    app:icon="@android:drawable/ic_menu_add" />
+                    app:icon="@drawable/ic_remove" />
             </LinearLayout>
+
+            <!-- New AI Suggestions Section -->
+            <TextView
+                android:id="@+id/tv_suggestions_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="AI Recommended Tours"
+                android:textColor="#1A1C1E"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/suggestions_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -215,8 +238,8 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/ic_activities"
-                            app:tint="@color/primary_color" />
+                            android:src="@drawable/ic_food"
+                            app:tint="@color/nav_background" />
                         <TextView
                             android:id="@+id/tv_food_amount"
                             android:layout_width="wrap_content"
@@ -244,8 +267,8 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/ic_maps"
-                            app:tint="@color/primary_color" />
+                            android:src="@drawable/ic_transport"
+                            app:tint="@color/nav_background" />
                         <TextView
                             android:id="@+id/tv_transport_amount"
                             android:layout_width="wrap_content"
@@ -273,8 +296,8 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/ic_user"
-                            app:tint="@color/primary_color" />
+                            android:src="@drawable/ic_hotel"
+                            app:tint="@color/nav_background" />
                         <TextView
                             android:id="@+id/tv_stay_amount"
                             android:layout_width="wrap_content"
@@ -311,12 +334,13 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/primary_color"
-        app:itemIconTint="@color/nav_item_color"
-        app:itemTextColor="@color/nav_item_color"
-        app:itemRippleColor="#33FFFFFF"
-        app:labelVisibilityMode="labeled"
+        android:layout_height="72dp"
+        android:background="@android:color/white"
+        app:itemIconSize="26dp"
+        app:itemIconTint="@color/nav_background"
+        app:itemTextColor="@color/nav_background"
+        app:labelVisibilityMode="unlabeled"
+        app:elevation="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">RouteMind</string>
+    <string name="no_itinerary_msg">No Itinerary made yet</string>
 </resources>
