@@ -5,8 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,7 +19,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.ai.client.generativeai.GenerativeModel;
 import com.google.ai.client.generativeai.java.GenerativeModelFutures;
@@ -50,12 +57,15 @@ public class TripActivity extends AppCompatActivity {
     Button btnCreateTrip, btnConfirmTrip;
     ImageView btnBack;
     LinearLayout llPlanTrip, llLoading, llResult;
-    TextView tvGeneratedItinerary;
+    
+    ViewPager2 vpItinerary;
+    ItineraryAdapter itineraryAdapter;
+    List<ItineraryDay> itineraryDays = new ArrayList<>();
+
     DatabaseHelper dbHelper;
     private static final String PREF_NAME = "BudgetPrefs";
     
-    // Updated Key and Model Configuration
-    private static final String GEMINI_API_KEY = "AIzaSyADZfoNfykxPDCL8-x3Z4thbog60BICQnk";
+    private static final String GEMINI_API_KEY = "AIzaSyCwIoVNwbeyFS0iegEVAqTWjSMKKDwtgqE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,11 +84,13 @@ public class TripActivity extends AppCompatActivity {
         llPlanTrip    = findViewById(R.id.llPlanTrip);
         llLoading     = findViewById(R.id.llLoading);
         llResult      = findViewById(R.id.llResult);
-        tvGeneratedItinerary = findViewById(R.id.tvGeneratedItinerary);
+        vpItinerary   = findViewById(R.id.vpItinerary);
         
         dbHelper      = new DatabaseHelper(this);
 
-        // Use Photon AI for smarter destination autocomplete
+        itineraryAdapter = new ItineraryAdapter(itineraryDays);
+        vpItinerary.setAdapter(itineraryAdapter);
+
         HomePage.PhotonAutocompleteAdapter adapter = new HomePage.PhotonAutocompleteAdapter(this);
         etDestination.setAdapter(adapter);
         etDestination.setThreshold(3);
@@ -91,12 +103,11 @@ public class TripActivity extends AppCompatActivity {
         }
 
         btnCreateTrip.setOnClickListener(v -> {
-            Log.d(TAG, "Generate Itinerary button clicked");
-            String destination = etDestination.getText().toString();
-            String startDateStr = etStartDate.getText().toString();
-            String endDateStr   = etEndDate.getText().toString();
-            String budget      = etBudget.getText().toString();
-            String interests   = etInterests.getText().toString();
+            String destination = etDestination.getText().toString().trim();
+            String startDateStr = etStartDate.getText().toString().trim();
+            String endDateStr   = etEndDate.getText().toString().trim();
+            String budget      = etBudget.getText().toString().trim();
+            String interests   = etInterests.getText().toString().trim();
 
             if (destination.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty()) {
                 Toast.makeText(TripActivity.this, "Please fill in Destination and Dates", Toast.LENGTH_SHORT).show();
@@ -118,10 +129,13 @@ public class TripActivity extends AppCompatActivity {
             String endDateStr   = etEndDate.getText().toString();
             String budget      = etBudget.getText().toString();
             String interests   = etInterests.getText().toString();
-            String itinerary   = tvGeneratedItinerary.getText().toString();
-            long days = calculateDays(startDateStr, endDateStr);
+            
+            StringBuilder fullItinerary = new StringBuilder();
+            for (ItineraryDay day : itineraryDays) {
+                fullItinerary.append(day.title).append("\n").append(day.content.toString()).append("\n\n");
+            }
 
-            saveAndMoveToBudget(destination, startDateStr, endDateStr, budget, interests, days, itinerary);
+            saveAndMoveToBudget(destination, startDateStr, endDateStr, budget, interests, calculateDays(startDateStr, endDateStr), fullItinerary.toString());
         });
 
         setupNavigation();
@@ -141,9 +155,7 @@ public class TripActivity extends AppCompatActivity {
         GenerationConfig.Builder configBuilder = new GenerationConfig.Builder();
         configBuilder.temperature = 0.7f;
         GenerationConfig config = configBuilder.build();
-
-        // Use v1 endpoint to avoid 404s common with older SDK defaults
-        // Fixed: RequestOptions constructor requires (Long timeout, String apiVersion) in Java
+        //DON'T CHANGE THE GEMINI-2.5-FLASH
         RequestOptions requestOptions = new RequestOptions(null, "v1");
         GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config, safetySettings, requestOptions);
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
@@ -152,7 +164,14 @@ public class TripActivity extends AppCompatActivity {
                         " from " + start + " to " + end + 
                         ". My budget is " + (budget.isEmpty() ? "standard" : "PHP " + budget) + 
                         " and I am interested in " + (interests.isEmpty() ? "sightseeing and food" : interests) + 
-                        ". Format the output clearly with Day 1, Day 2, etc.";
+                        ". \n\nSTRICT FORMATTING:\n" +
+                        "For each day, start exactly with 'Day X:' followed by a very short title.\n" +
+                        "List the schedule chronologically using this format:\n" +
+                        "7:30 [Activity description]\n" +
+                        "8:00 [Activity description] w/ price estimate in PHP\n" +
+                        "Continue until 9:00 PM.\n" +
+                        "Separate each day with exactly '---' on a new line.\n" +
+                        "Return ONLY the schedule. No intro/outro.";
 
         Content content = new Content.Builder().addText(prompt).build();
         Executor executor = Executors.newSingleThreadExecutor();
@@ -166,9 +185,9 @@ public class TripActivity extends AppCompatActivity {
                         String resultText = result.getText();
                         if (resultText != null && !resultText.isEmpty()) {
                             Log.d(TAG, "AI Itinerary generated successfully");
+                            parseItinerary(resultText);
                             llLoading.setVisibility(View.GONE);
                             llResult.setVisibility(View.VISIBLE);
-                            tvGeneratedItinerary.setText(resultText);
                         } else {
                             handleAIError("AI returned an empty response.");
                         }
@@ -186,12 +205,48 @@ public class TripActivity extends AppCompatActivity {
         }, executor);
     }
 
+    private void parseItinerary(String text) {
+        itineraryDays.clear();
+        String[] daysRaw = text.split("---");
+        for (String dayRaw : daysRaw) {
+            String trimmed = dayRaw.trim();
+            if (trimmed.isEmpty()) continue;
+            
+            String title = "Day " + (itineraryDays.size() + 1);
+            String content = trimmed;
+            
+            if (trimmed.toLowerCase().startsWith("day")) {
+                int firstNewline = trimmed.indexOf("\n");
+                if (firstNewline != -1) {
+                    title = trimmed.substring(0, firstNewline).trim();
+                    content = trimmed.substring(firstNewline).trim();
+                }
+            }
+            
+            itineraryDays.add(new ItineraryDay(title, formatMarkdown(content)));
+        }
+        itineraryAdapter.notifyDataSetChanged();
+        vpItinerary.setCurrentItem(0, false);
+    }
+
+    private Spanned formatMarkdown(String text) {
+        if (text == null) return Html.fromHtml("", Html.FROM_HTML_MODE_LEGACY);
+        
+        // Auto-bold times (e.g., 7:30, 12:00 PM) for readability
+        String processed = text.trim()
+                .replaceAll("(?m)^(\\d{1,2}:\\d{2})", "<b>$1</b>") 
+                .replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>")
+                .replaceAll("\n", "<br>");
+
+        return Html.fromHtml(processed, Html.FROM_HTML_MODE_LEGACY);
+    }
+
     private void handleAIError(String error) {
         llLoading.setVisibility(View.GONE);
         llPlanTrip.setVisibility(View.VISIBLE);
         String message = "AI Error: " + error;
-        if (error != null && error.contains("404")) {
-            message = "AI Model not found. Please check API Key configuration.";
+        if (error != null && (error.contains("403") || error.contains("leaked") || error.contains("PERMISSION_DENIED"))) {
+            message = "API Key error. Please ensure you are using a valid key from Google AI Studio.";
         }
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
@@ -224,30 +279,32 @@ public class TripActivity extends AppCompatActivity {
 
     private void setupNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_maps);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                startActivity(new Intent(this, HomePage.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(this, BudgetTracker.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_maps) {
-                return true;
-            } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(this, TripHistory.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_user_profile) {
-                startActivity(new Intent(this, UserProfile.class));
-                finish();
-                return true;
-            }
-            return false;
-        });
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_maps);
+            bottomNav.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.nav_home) {
+                    startActivity(new Intent(this, HomePage.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_activities) {
+                    startActivity(new Intent(this, BudgetTracker.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_maps) {
+                    return true;
+                } else if (id == R.id.nav_trip_history) {
+                    startActivity(new Intent(this, TripHistory.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_user_profile) {
+                    startActivity(new Intent(this, UserProfile.class));
+                    finish();
+                    return true;
+                }
+                return false;
+            });
+        }
     }
 
     private long calculateDays(String start, String end) {
@@ -277,5 +334,47 @@ public class TripActivity extends AppCompatActivity {
                     editText.setText(date);
                 }, year, month, day);
         datePickerDialog.show();
+    }
+
+    // --- Inner classes for the Swipeable ViewPager2 ---
+
+    private static class ItineraryDay {
+        String title;
+        Spanned content;
+        ItineraryDay(String title, Spanned content) {
+            this.title = title;
+            this.content = content;
+        }
+    }
+
+    private static class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.ViewHolder> {
+        private final List<ItineraryDay> days;
+        ItineraryAdapter(List<ItineraryDay> days) { this.days = days; }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_itinerary_day, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            ItineraryDay day = days.get(position);
+            holder.tvDayTitle.setText(day.title);
+            holder.tvDayContent.setText(day.content);
+        }
+
+        @Override
+        public int getItemCount() { return days.size(); }
+
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvDayTitle, tvDayContent;
+            ViewHolder(View view) {
+                super(view);
+                tvDayTitle = view.findViewById(R.id.tvDayTitle);
+                tvDayContent = view.findViewById(R.id.tvDayContent);
+            }
+        }
     }
 }

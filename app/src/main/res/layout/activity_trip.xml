@@ -232,24 +232,12 @@
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.card.MaterialCardView
+                <!-- Swipeable Days -->
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/vpItinerary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#E2E8F0"
-                    app:strokeWidth="1dp">
-
-                    <TextView
-                        android:id="@+id/tvGeneratedItinerary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:lineSpacingExtra="4sp"
-                        android:padding="20dp"
-                        android:textColor="#334155"
-                        android:textSize="15sp" />
-                </com.google.android.material.card.MaterialCardView>
+                    android:layout_height="400dp"
+                    android:layout_marginTop="16dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnConfirmTrip"
