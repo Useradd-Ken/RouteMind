@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/RouteMind.iml" filepath="$PROJECT_DIR$/.idea/modules/RouteMind.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/RouteMind.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/RouteMind.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/RouteMind.app.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/app/RouteMind.app.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/RouteMind.app.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/app/RouteMind.app.unitTest.iml" />
+    </modules>
+  </component>
+</project>

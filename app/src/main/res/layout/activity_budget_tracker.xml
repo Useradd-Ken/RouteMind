@@ -43,7 +43,7 @@
                     android:text="Reset All"
                     android:textAllCaps="false"
                     android:textColor="@android:color/holo_red_dark"
-                    app:icon="@android:drawable/ic_menu_delete"
+                    app:icon="@drawable/ic_delete"
                     app:iconTint="@android:color/holo_red_dark" />
             </RelativeLayout>
 
@@ -77,7 +77,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_alignParentEnd="true"
-                            android:src="@android:drawable/ic_menu_edit"
+                            android:src="@drawable/ic_edit"
                             android:visibility="gone"
                             app:tint="@color/white" />
                     </RelativeLayout>
@@ -171,7 +171,7 @@
                     android:text="Set Budget"
                     android:textAllCaps="false"
                     app:cornerRadius="12dp"
-                    app:icon="@android:drawable/ic_input_add" />
+                    app:icon="@drawable/ic_add" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_add_expense_top"
@@ -182,8 +182,32 @@
                     android:text="Log Expense"
                     android:textAllCaps="false"
                     app:cornerRadius="12dp"
-                    app:icon="@android:drawable/ic_menu_add" />
+                    app:icon="@drawable/ic_remove" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_suggestions_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="AI Recommended Tours"
+                android:textColor="#1A1C1E"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:visibility="gone"/>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/suggestions_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone" />
+            </HorizontalScrollView>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -215,7 +239,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/ic_activities"
+                            android:src="@drawable/ic_food"
                             app:tint="@color/primary_color" />
                         <TextView
                             android:id="@+id/tv_food_amount"
@@ -244,7 +268,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/ic_maps"
+                            android:src="@drawable/ic_transport"
                             app:tint="@color/primary_color" />
                         <TextView
                             android:id="@+id/tv_transport_amount"
@@ -273,7 +297,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/ic_user"
+                            android:src="@drawable/ic_hotel"
                             app:tint="@color/primary_color" />
                         <TextView
                             android:id="@+id/tv_stay_amount"

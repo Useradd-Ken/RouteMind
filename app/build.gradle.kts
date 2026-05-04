@@ -38,7 +38,7 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.generativeai)
-    implementation("com.google.guava:guava:33.0.0-android")
+    implementation(libs.guava)
     
     // Firebase
     implementation(platform(libs.firebase.bom))
@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.gson)
+    
+    // Location
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

@@ -46,14 +46,17 @@ public class TripHistory extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
                 startActivity(new Intent(getApplicationContext(), HomePage.class));
+                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_activities) {
                 startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
+                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_maps) {
                 startActivity(new Intent(getApplicationContext(), TripActivity.class));
+                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_trip_history) {
@@ -68,6 +71,7 @@ public class TripHistory extends AppCompatActivity {
     }
 
     private void loadTripHistory() {
+        if (llTripList == null) return;
         llTripList.removeAllViews();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         // Get trips ordered by latest first

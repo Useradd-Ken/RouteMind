@@ -5,27 +5,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.List;
+import java.util.Date;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class TripActivity extends AppCompatActivity {
 
     AutoCompleteTextView etDestination;
     EditText etStartDate, etEndDate, etBudget, etInterests;
     Button btnCreateTrip;
+    ImageView btnBack;
     DatabaseHelper dbHelper;
-
     private static final String PREF_NAME = "BudgetPrefs";
 
     @Override
@@ -39,32 +42,43 @@ public class TripActivity extends AppCompatActivity {
         etBudget      = findViewById(R.id.etBudget);
         etInterests   = findViewById(R.id.etInterests);
         btnCreateTrip = findViewById(R.id.btnCreateTrip);
-        dbHelper = new DatabaseHelper(this);
+        btnBack       = findViewById(R.id.btn_back);
+        dbHelper      = new DatabaseHelper(this);
 
-        // Fetch destinations from SQLite DB
-        List<String> destinations = dbHelper.getAllDestinations();
-        
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_dropdown_item_1line, destinations);
+        // Use Photon AI for smarter destination autocomplete
+        HomePage.PhotonAutocompleteAdapter adapter = new HomePage.PhotonAutocompleteAdapter(this);
         etDestination.setAdapter(adapter);
+        etDestination.setThreshold(3);
 
         etStartDate.setOnClickListener(v -> showDatePicker(etStartDate));
         etEndDate.setOnClickListener(v -> showDatePicker(etEndDate));
 
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
         btnCreateTrip.setOnClickListener(v -> {
             String destination = etDestination.getText().toString();
-            String startDate   = etStartDate.getText().toString();
-            String endDate     = etEndDate.getText().toString();
+            String startDateStr = etStartDate.getText().toString();
+            String endDateStr   = etEndDate.getText().toString();
             String budget      = etBudget.getText().toString();
+            String interests   = etInterests.getText().toString();
 
-            if (destination.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
+            if (destination.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty()) {
                 Toast.makeText(TripActivity.this, "Please fill in Destination and Dates", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            long days = calculateDays(startDateStr, endDateStr);
+            if (days < 1) {
+                Toast.makeText(TripActivity.this, "End date must be after start date", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            double budgetValue = 0;
             if (!budget.isEmpty()) {
                 try {
-                    double budgetValue = Double.parseDouble(budget);
+                    budgetValue = Double.parseDouble(budget);
                     SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putLong("totalBudget", Double.doubleToLongBits(budgetValue));
@@ -72,8 +86,19 @@ public class TripActivity extends AppCompatActivity {
                 } catch (NumberFormatException ignored) {}
             }
 
+            // Save Trip to Local History (SQLite)
+            dbHelper.saveTrip(destination, startDateStr, endDateStr, budget, interests, "Itinerary pending generation...");
+
             Toast.makeText(TripActivity.this, "Trip Created Successfully!", Toast.LENGTH_LONG).show();
-            startActivity(new Intent(TripActivity.this, BudgetTracker.class));
+            
+            Intent intent = new Intent(TripActivity.this, BudgetTracker.class);
+            intent.putExtra("DESTINATION", destination);
+            intent.putExtra("START_DATE", startDateStr);
+            intent.putExtra("END_DATE", endDateStr);
+            intent.putExtra("BUDGET", budgetValue);
+            intent.putExtra("INTERESTS", interests);
+            intent.putExtra("DURATION_DAYS", days);
+            startActivity(intent);
             finish();
         });
 
@@ -81,35 +106,57 @@ public class TripActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_maps);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_maps);
+        bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                startActivity(new Intent(getApplicationContext(), HomePage.class));
+                startActivity(new Intent(this, HomePage.class));
                 finish();
                 return true;
             } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
+                startActivity(new Intent(this, BudgetTracker.class));
                 finish();
                 return true;
+            } else if (id == R.id.nav_maps) {
+                return true;
             } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(getApplicationContext(), TripHistory.class));
+                startActivity(new Intent(this, TripHistory.class));
                 finish();
                 return true;
             } else if (id == R.id.nav_user_profile) {
-                startActivity(new Intent(getApplicationContext(), UserProfile.class));
+                startActivity(new Intent(this, UserProfile.class));
                 finish();
                 return true;
             }
-            return id == R.id.nav_maps;
+            return false;
         });
+    }
+
+    private long calculateDays(String start, String end) {
+        SimpleDateFormat sdf = new SimpleDateFormat("d/M/yyyy", Locale.getDefault());
+        try {
+            Date d1 = sdf.parse(start);
+            Date d2 = sdf.parse(end);
+            if (d1 != null && d2 != null) {
+                long diff = d2.getTime() - d1.getTime();
+                return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) + 1;
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     private void showDatePicker(EditText editText) {
         final Calendar c = Calendar.getInstance();
-        new DatePickerDialog(this, (view, year, month, day) -> {
-            editText.setText(day + "/" + (month + 1) + "/" + year);
-        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        new DatePickerDialog(this, (view, year1, monthOfYear, dayOfMonth) -> {
+            String selectedDate = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
+            editText.setText(selectedDate);
+        }, year, month, day).show();
     }
 }
