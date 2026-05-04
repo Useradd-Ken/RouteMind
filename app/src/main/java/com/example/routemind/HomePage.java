@@ -81,7 +81,7 @@ public class HomePage extends AppCompatActivity {
     private String currentDestination = "Manila";
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
-    private static final String GEMINI_API_KEY = "";
+    private static final String GEMINI_API_KEY = "AIzaSyB41-2AFDPcsfndGns8RZASUtW77K08r60";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -165,12 +165,12 @@ public class HomePage extends AppCompatActivity {
                     updateLocationName(currentLat, currentLon);
                 } else {
                     Log.d(TAG, "Location is null, using Manila as fallback.");
-                    fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination);
+                    updateTitleOnly();
                 }
             });
         } catch (SecurityException e) {
             Log.e(TAG, "Location permission error", e);
-            fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination);
+            updateTitleOnly();
         }
     }
 
@@ -184,14 +184,17 @@ public class HomePage extends AppCompatActivity {
                 if (city == null) city = address.getSubAdminArea();
                 if (city != null) {
                     currentDestination = city;
-                    tvSectionTitle.setText("Explore " + currentDestination);
-                    fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination);
                 }
             }
         } catch (IOException e) {
             Log.e(TAG, "Geocoder error", e);
-            fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination);
         }
+        updateTitleOnly();
+    }
+
+    private synchronized void updateTitleOnly() {
+        tvSectionTitle.setText("Explore " + currentDestination);
+        // Removed automatic fetchAIRecommendations to save quota and prevent automatic requests on launch.
     }
 
     @Override
@@ -202,7 +205,7 @@ public class HomePage extends AppCompatActivity {
                 fetchCurrentLocation();
             } else {
                 Toast.makeText(this, "Permission denied. Using default location.", Toast.LENGTH_SHORT).show();
-                fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination);
+                updateTitleOnly();
             }
         }
     }
@@ -220,7 +223,9 @@ public class HomePage extends AppCompatActivity {
                         try {
                             item.lon = f.geometry.coordinates.get(0);
                             item.lat = f.geometry.coordinates.get(1);
-                            item.imageUrl = "https://loremflickr.com/400/300/" + f.properties.name.toLowerCase().replace(" ", "");
+                            // Sanitize search name for URL keywords
+                            String searchKey = f.properties.name.toLowerCase().replaceAll("[^a-z0-9]", "");
+                            item.imageUrl = "https://loremflickr.com/400/300/" + searchKey;
                             results.add(item);
                         } catch (Exception ignored) {}
                     }
@@ -239,6 +244,11 @@ public class HomePage extends AppCompatActivity {
     }
 
     private void fetchAIRecommendations(String category, String title) {
+        if (GEMINI_API_KEY.isEmpty()) {
+            tvSectionTitle.setText("API Key Missing");
+            return;
+        }
+
         tvSectionTitle.setText("Finding " + title + "...");
         List<SafetySetting> safetySettings = new ArrayList<>();
         safetySettings.add(new SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE));
@@ -250,9 +260,15 @@ public class HomePage extends AppCompatActivity {
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
         RequestOptions requestOptions = new RequestOptions();
+        
         GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config, safetySettings, requestOptions);
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
-        String prompt = "List 10 specific and accurate popular " + category + " in " + currentDestination + ". For each, provide a short 1-sentence description and a relevant imageUrl using: https://loremflickr.com/400/300/" + currentDestination.toLowerCase().replace(" ", "") + ",[place_name_keyword]. Return as a JSON array of objects with fields: \"title\", \"subtitle\", \"imageUrl\". Return ONLY the raw JSON array.";
+        
+        String prompt = "List 10 specific popular " + category + " in " + currentDestination + ". " +
+                "For each, provide a short 1-sentence description and a specific imageUrl using: 'https://loremflickr.com/400/300/[keywords]'. " +
+                "Replace [keywords] with 2-3 simple lowercase tags for that exact place (e.g., 'boracay,beach'). No accents. " +
+                "Return as a JSON array of objects with fields: \"title\", \"subtitle\", \"imageUrl\". Return ONLY the raw JSON array.";
+        
         Content content = new Content.Builder().addText(prompt).build();
         Executor executor = Executors.newSingleThreadExecutor();
         ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
@@ -261,10 +277,13 @@ public class HomePage extends AppCompatActivity {
             public void onSuccess(GenerateContentResponse result) {
                 try {
                     String resultText = result.getText();
+                    if (resultText == null || resultText.isEmpty()) throw new Exception("AI returned empty content");
+                    
                     String cleanJson = resultText.trim();
                     if (cleanJson.contains("[") && cleanJson.contains("]")) {
                         cleanJson = cleanJson.substring(cleanJson.indexOf("["), cleanJson.lastIndexOf("]") + 1);
                     }
+                    
                     JSONArray array = new JSONArray(cleanJson);
                     List<ExploreItem> items = new ArrayList<>();
                     for (int i = 0; i < array.length(); i++) {
@@ -274,10 +293,22 @@ public class HomePage extends AppCompatActivity {
                     runOnUiThread(() -> showExploreResults(title, items, false));
                 } catch (Exception e) {
                     Log.e(TAG, "AI Error", e);
+                    runOnUiThread(() -> tvSectionTitle.setText("AI Parse Error. Please retry."));
                 }
             }
             @Override public void onFailure(Throwable t) {
                 Log.e(TAG, "AI Fetch Failed", t);
+                runOnUiThread(() -> {
+                    String msg = "AI Generation Failed";
+                    if (t.getMessage() != null) {
+                        if (t.getMessage().contains("429") || t.getMessage().contains("Quota")) {
+                            msg = "AI Quota Exceeded. Please wait 1 min.";
+                        } else if (t.getMessage().contains("403")) {
+                            msg = "AI Key Permission Error.";
+                        }
+                    }
+                    tvSectionTitle.setText(msg);
+                });
             }
         }, executor);
     }
@@ -301,7 +332,8 @@ public class HomePage extends AppCompatActivity {
                     Toast.makeText(this, "Discovery region updated to " + item.title, Toast.LENGTH_SHORT).show();
                     ((EditText)findViewById(R.id.search_destinations)).setText("");
                     ((EditText)findViewById(R.id.search_destinations)).clearFocus();
-                    fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + item.title);
+                    
+                    updateTitleOnly();
                 }
             });
             resultsContainer.addView(itemView);
@@ -310,9 +342,7 @@ public class HomePage extends AppCompatActivity {
 
     private void clearDisplay() {
         resultsContainer.removeAllViews();
-        tvSectionTitle.setText("Explore " + currentDestination);
-        planTripCard.setVisibility(View.VISIBLE);
-        fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination);
+        updateTitleOnly();
     }
 
     private void setupBottomNavigation() {
