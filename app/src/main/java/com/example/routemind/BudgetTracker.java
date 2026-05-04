@@ -59,7 +59,7 @@ public class BudgetTracker extends AppCompatActivity {
 
     private SharedPreferences sharedPreferences;
     private static final String PREF_NAME = "BudgetPrefs";
-    private static final String GEMINI_API_KEY = ""; // Replace with your API Key
+    private static final String GEMINI_API_KEY = "AIzaSyDqx0-E-Q_QFKODuJswSp912UXqcdtsO44";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
