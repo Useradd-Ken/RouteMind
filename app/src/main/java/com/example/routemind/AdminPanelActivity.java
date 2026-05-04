@@ -3,21 +3,27 @@ package com.example.routemind;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.List;
 
 public class AdminPanelActivity extends AppCompatActivity {
 
+    private static final String TAG = "AdminPanelActivity";
     TabLayout tabLayout;
     TextView tvContent;
     Button btnLogout;
     DBHelper DB;
+    FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +34,12 @@ public class AdminPanelActivity extends AppCompatActivity {
         tvContent = findViewById(R.id.tv_admin_content);
         btnLogout = findViewById(R.id.btn_logout);
         DB = new DBHelper(this);
+        
+        try {
+            firestore = FirebaseFirestore.getInstance();
+        } catch (Exception e) {
+            Log.e(TAG, "Firestore initialization failed: " + e.getMessage());
+        }
 
         showUsers();
 
@@ -65,9 +77,9 @@ public class AdminPanelActivity extends AppCompatActivity {
     private void showUsers() {
         Cursor cursor = DB.getAllUsers();
         StringBuilder builder = new StringBuilder();
-        builder.append("USERS IN DATABASE:\n\n");
+        builder.append("USERS IN DATABASE (Local):\n\n");
         if (cursor.getCount() == 0) {
-            builder.append("No users found.");
+            builder.append("No local users found.");
         } else {
             while (cursor.moveToNext()) {
                 builder.append("Username: ").append(cursor.getString(0)).append("\n");
@@ -81,15 +93,48 @@ public class AdminPanelActivity extends AppCompatActivity {
     }
 
     private void showReviews() {
+        if (firestore == null) {
+            showLocalReviews();
+            return;
+        }
+
+        tvContent.setText("Loading reviews from Cloud...");
+        firestore.collection("reviews")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        StringBuilder builder = new StringBuilder();
+                        builder.append("REVIEWS IN DATABASE (Cloud):\n\n");
+                        if (task.getResult().isEmpty()) {
+                            builder.append("No reviews found in Cloud.");
+                        } else {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                builder.append("User Email: ").append(document.getString("email")).append("\n");
+                                builder.append("User Name: ").append(document.getString("userName")).append("\n");
+                                builder.append("Itinerary: ").append(document.getString("itineraryId")).append("\n");
+                                builder.append("Rating: ").append(document.get("rating")).append(" stars\n");
+                                builder.append("Review: ").append(document.getString("review")).append("\n");
+                                builder.append("Time: ").append(document.get("timestamp") != null ? document.get("timestamp").toString() : "N/A").append("\n");
+                                builder.append("--------------------\n");
+                            }
+                        }
+                        tvContent.setText(builder.toString());
+                    } else {
+                        Log.e(TAG, "Error getting reviews: ", task.getException());
+                        showLocalReviews();
+                    }
+                });
+    }
+
+    private void showLocalReviews() {
         Cursor cursor = DB.getAllReviews();
         StringBuilder builder = new StringBuilder();
-        builder.append("REVIEWS IN DATABASE:\n\n");
+        builder.append("REVIEWS IN DATABASE (Local Fallback):\n\n");
         if (cursor.getCount() == 0) {
-            builder.append("No reviews found.");
+            builder.append("No local reviews found.");
         } else {
             while (cursor.moveToNext()) {
-                // Indices updated based on new schema in DBHelper:
-                // 0: id, 1: username, 2: user_name, 3: itinerary_id, 4: rating, 5: review, 6: timestamp
                 builder.append("User Email: ").append(cursor.getString(1)).append("\n");
                 builder.append("User Name: ").append(cursor.getString(2)).append("\n");
                 builder.append("Itinerary: ").append(cursor.getString(3)).append("\n");
