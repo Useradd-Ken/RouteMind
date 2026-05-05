@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,11 +14,15 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class TourDetailsActivity extends AppCompatActivity {
 
-    private String title, description, itinerary, imageUrl;
+    private String title, description, itinerary, imageUrl, category;
     private double price;
     private static final String PREF_NAME = "BudgetPrefs";
+    private static final String PREF_TRANSACTIONS = "savedTransactions";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +42,7 @@ public class TourDetailsActivity extends AppCompatActivity {
         description = getIntent().getStringExtra("DESCRIPTION");
         itinerary = getIntent().getStringExtra("ITINERARY");
         imageUrl = getIntent().getStringExtra("IMAGE_URL");
+        category = getIntent().getStringExtra("CATEGORY");
         price = getIntent().getDoubleExtra("PRICE", 0);
 
         // Bind views
@@ -47,7 +53,6 @@ public class TourDetailsActivity extends AppCompatActivity {
         
         ImageView ivDetailsImage = findViewById(R.id.iv_details_image);
         
-        // Load image using Glide if URL exists, fallback to placeholder
         if (imageUrl != null && !imageUrl.isEmpty()) {
             Glide.with(this)
                     .load(imageUrl)
@@ -72,9 +77,28 @@ public class TourDetailsActivity extends AppCompatActivity {
         double remaining = totalBudget - totalSpent;
 
         if (remaining >= price) {
-            transportTotal += price;
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putLong("transportTotal", Double.doubleToLongBits(transportTotal));
+            
+            // Apply expense to the correct category
+            if (category == null || category.isEmpty()) category = "Transport"; // Fallback
+            
+            if (category.equalsIgnoreCase("Food")) {
+                foodTotal += price;
+                editor.putLong("foodTotal", Double.doubleToLongBits(foodTotal));
+            } else if (category.equalsIgnoreCase("Stay")) {
+                stayTotal += price;
+                editor.putLong("stayTotal", Double.doubleToLongBits(stayTotal));
+            } else {
+                transportTotal += price;
+                editor.putLong("transportTotal", Double.doubleToLongBits(transportTotal));
+            }
+
+            // Save transaction for history
+            saveTransaction(sharedPreferences, category, price);
+
+            // Remove from saved suggestions once booked
+            updateSavedSuggestionsAfterRemoval(sharedPreferences, title);
+
             editor.apply();
 
             Toast.makeText(this, "Successfully booked: " + title, Toast.LENGTH_LONG).show();
@@ -86,5 +110,40 @@ public class TourDetailsActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Insufficient budget to book this tour!", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void saveTransaction(SharedPreferences sharedPreferences, String category, double amount) {
+        String savedTransactions = sharedPreferences.getString(PREF_TRANSACTIONS, "");
+        try {
+            JSONArray array;
+            if (savedTransactions.isEmpty()) {
+                array = new JSONArray();
+            } else {
+                array = new JSONArray(savedTransactions);
+            }
+            JSONObject obj = new JSONObject();
+            obj.put("category", category);
+            obj.put("amount", amount);
+            array.put(obj);
+            sharedPreferences.edit().putString(PREF_TRANSACTIONS, array.toString()).apply();
+        } catch (Exception e) {
+            Log.e("TourDetails", "Error saving transaction", e);
+        }
+    }
+
+    private void updateSavedSuggestionsAfterRemoval(SharedPreferences prefs, String titleToRemove) {
+        String savedJson = prefs.getString("savedSuggestions", "");
+        if (savedJson.isEmpty()) return;
+        try {
+            JSONArray array = new JSONArray(savedJson);
+            JSONArray newArray = new JSONArray();
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                if (!obj.optString("title").equals(titleToRemove)) {
+                    newArray.put(obj);
+                }
+            }
+            prefs.edit().putString("savedSuggestions", newArray.toString()).apply();
+        } catch (Exception ignored) {}
     }
 }

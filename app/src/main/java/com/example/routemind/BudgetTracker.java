@@ -27,7 +27,6 @@ import com.google.ai.client.generativeai.type.Content;
 import com.google.ai.client.generativeai.type.GenerateContentResponse;
 import com.google.ai.client.generativeai.type.GenerationConfig;
 import com.google.ai.client.generativeai.type.HarmCategory;
-import com.google.ai.client.generativeai.type.RequestOptions;
 import com.google.ai.client.generativeai.type.SafetySetting;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -58,8 +57,11 @@ public class BudgetTracker extends AppCompatActivity {
 
     private SharedPreferences sharedPreferences;
     private static final String PREF_NAME = "BudgetPrefs";
+    private static final String PREF_SUGGESTIONS = "savedSuggestions";
+    private static final String PREF_TRANSACTIONS = "savedTransactions";
     
-    private static final String GEMINI_API_KEY = "AIzaSyDvm5haTIPfzEDyep7O8_yzNBy-sgQLkrw";
+    // API Key updated to latest provided
+    private static final String GEMINI_API_KEY = "AIzaSyA4pwZY4jYN08D6IBmv_ENKktKXPCR7wro";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +96,7 @@ public class BudgetTracker extends AppCompatActivity {
 
         findViewById(R.id.btn_add_expense_top).setOnClickListener(v -> {
             if (totalBudget <= 0) {
-                Toast.makeText(this, "Please set your budget first!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please define your budget to start tracking expenses.", Toast.LENGTH_SHORT).show();
                 showSetBudgetDialog();
             } else {
                 showAddExpenseDialog();
@@ -112,22 +114,28 @@ public class BudgetTracker extends AppCompatActivity {
                 intent.getLongExtra("DURATION_DAYS", 1)
             );
         } else {
-            tvSuggestionsTitle.setVisibility(View.GONE);
-            suggestionsContainer.setVisibility(View.GONE);
+            String savedJson = sharedPreferences.getString(PREF_SUGGESTIONS, "");
+            if (!savedJson.isEmpty()) {
+                parseAndDisplaySuggestions(savedJson);
+            } else {
+                tvSuggestionsTitle.setVisibility(View.GONE);
+                suggestionsContainer.setVisibility(View.GONE);
+            }
         }
 
+        loadTransactions();
         updateBudgetUI();
     }
 
     private void fetchRealAISuggestions(String dest, String interests, double budget, long days) {
         if (GEMINI_API_KEY.isEmpty()) {
-            tvSuggestionsTitle.setText("API Key Missing");
+            tvSuggestionsTitle.setText("Exploration features are currently offline.");
             return;
         }
 
         tvSuggestionsTitle.setVisibility(View.VISIBLE);
         suggestionsContainer.setVisibility(View.VISIBLE);
-        tvSuggestionsTitle.setText("AI Generating Suggestions...");
+        tvSuggestionsTitle.setText("Curating handpicked experiences for your journey...");
         
         List<SafetySetting> safetySettings = new ArrayList<>();
         safetySettings.add(new SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE));
@@ -140,25 +148,22 @@ public class BudgetTracker extends AppCompatActivity {
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
 
-        RequestOptions requestOptions = new RequestOptions();
-        
         GenerativeModel gm = new GenerativeModel(
                 "gemini-2.5-flash",
                 GEMINI_API_KEY,
                 config,
-                safetySettings,
-                requestOptions
+                safetySettings
         );
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
-        String prompt = "Create 3 realistic travel tour suggestions for " + dest + " focusing on " + interests + 
+        String prompt = "Create 5 realistic travel suggestions for " + dest + " focusing on " + interests +
             " for a trip duration of " + days + " days. The user has a budget of PHP " + budget + ". " +
-            "Provide accurate and current market prices. If no options are available under the budget, suggest the closest available options even if they exceed the budget. " +
-            "Return a JSON array of objects. Each object MUST have: " +
-            "\"title\", \"description\", \"price\" (as a number), \"itinerary\" (a brief 1-sentence summary of what is included, NOT a day-by-day list), " +
-            "and \"imageUrl\". For \"imageUrl\", generate a valid URL using this pattern: 'https://loremflickr.com/800/600/[keywords]'. " +
-            "Replace [keywords] with specific descriptive tags related to the suggested landmark or activity (e.g., if you suggest White Beach in Boracay, use 'boracay,whitebeach'; if Tagbilaran Bohol, use 'bohol,tagbilaran'). " +
-            "Return ONLY the JSON array, no other text.";
+            "Provide accurate prices. Return a JSON array of objects. Each object MUST have: " +
+            "\"title\", \"description\", \"price\" (number), \"category\" (one of: \"Food\", \"Transport\", \"Stay\"), " +
+            "\"itinerary\" (short summary), and \"imageUrl\". " +
+            "For \"imageUrl\", use 'https://image.pollinations.ai/prompt/[descriptive_prompt]?width=800&height=600&nologo=true' " +
+            "where [descriptive_prompt] is a short, specific description of a high-quality photo for the suggestion. " +
+            "Return ONLY the JSON array.";
 
         Content content = new Content.Builder().addText(prompt).build();
         Executor executor = Executors.newSingleThreadExecutor();
@@ -169,25 +174,22 @@ public class BudgetTracker extends AppCompatActivity {
             public void onSuccess(GenerateContentResponse result) {
                 try {
                     String resultText = result.getText();
-                    if (resultText == null || resultText.isEmpty()) {
-                        throw new Exception("AI returned empty content");
-                    }
-                    runOnUiThread(() -> parseAndDisplaySuggestions(resultText));
+                    if (resultText == null || resultText.isEmpty()) throw new Exception("Empty AI response");
+                    runOnUiThread(() -> {
+                        sharedPreferences.edit().putString(PREF_SUGGESTIONS, resultText).apply();
+                        parseAndDisplaySuggestions(resultText);
+                    });
                 } catch (Exception e) {
                     Log.e(TAG, "Processing error", e);
-                    runOnUiThread(() -> {
-                        tvSuggestionsTitle.setText("AI Response Error");
-                    });
+                    runOnUiThread(() -> tvSuggestionsTitle.setText("We encountered a minor issue syncing recommendations."));
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                Log.e(TAG, "AI Call Failed", t);
+                Log.e(TAG, "Sync Failed", t);
                 runOnUiThread(() -> {
-                    String errorMsg = t.getMessage();
-                    tvSuggestionsTitle.setText("AI Suggestion Failed");
-                    Toast.makeText(BudgetTracker.this, "AI Error: " + errorMsg, Toast.LENGTH_LONG).show();
+                    tvSuggestionsTitle.setText("Unable to load suggestions. Please check your network connection.");
                 });
             }
         }, executor);
@@ -196,19 +198,6 @@ public class BudgetTracker extends AppCompatActivity {
     private void parseAndDisplaySuggestions(String json) {
         try {
             String cleanJson = json.trim();
-            if (cleanJson.startsWith("```json")) {
-                cleanJson = cleanJson.substring(7);
-                if (cleanJson.contains("```")) {
-                    cleanJson = cleanJson.substring(0, cleanJson.lastIndexOf("```"));
-                }
-            } else if (cleanJson.startsWith("```")) {
-                cleanJson = cleanJson.substring(3);
-                if (cleanJson.contains("```")) {
-                    cleanJson = cleanJson.substring(0, cleanJson.lastIndexOf("```"));
-                }
-            }
-            cleanJson = cleanJson.trim();
-            
             if (cleanJson.contains("[") && cleanJson.contains("]")) {
                 cleanJson = cleanJson.substring(cleanJson.indexOf("["), cleanJson.lastIndexOf("]") + 1);
             }
@@ -217,18 +206,21 @@ public class BudgetTracker extends AppCompatActivity {
             suggestionsContainer.removeAllViews();
             
             if (array.length() == 0) {
-                tvSuggestionsTitle.setText("No recommendations found");
+                tvSuggestionsTitle.setText("No customized recommendations found for this trip.");
                 return;
             }
 
-            tvSuggestionsTitle.setText("AI Recommended Tours");
+            tvSuggestionsTitle.setVisibility(View.VISIBLE);
+            suggestionsContainer.setVisibility(View.VISIBLE);
+            tvSuggestionsTitle.setText("Personalized for your journey");
 
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
-                String title = obj.optString("title", "Local Trip");
-                String desc = obj.optString("description", "A recommended activity for you.");
+                String title = obj.optString("title", "Local Experience");
+                String desc = obj.optString("description", "");
                 double price = obj.optDouble("price", 0.0);
-                String itinerary = obj.optString("itinerary", "Details available upon selection.");
+                String category = obj.optString("category", "Transport");
+                String itinerary = obj.optString("itinerary", "");
                 String imageUrl = obj.optString("imageUrl", "");
 
                 View itemView = getLayoutInflater().inflate(R.layout.item_suggestion, suggestionsContainer, false);
@@ -238,11 +230,7 @@ public class BudgetTracker extends AppCompatActivity {
 
                 ImageView ivImage = itemView.findViewById(R.id.iv_suggestion_image);
                 if (!imageUrl.isEmpty()) {
-                    Glide.with(this)
-                            .load(imageUrl)
-                            .placeholder(R.drawable.ic_launcher_background)
-                            .error(R.drawable.ic_launcher_background)
-                            .into(ivImage);
+                    Glide.with(this).load(imageUrl).into(ivImage);
                 }
 
                 itemView.setOnClickListener(v -> {
@@ -252,16 +240,18 @@ public class BudgetTracker extends AppCompatActivity {
                     intent.putExtra("PRICE", price);
                     intent.putExtra("ITINERARY", itinerary);
                     intent.putExtra("IMAGE_URL", imageUrl);
+                    intent.putExtra("CATEGORY", category);
                     startActivity(intent);
                 });
 
                 itemView.findViewById(R.id.btn_select_suggestion).setOnClickListener(v -> {
-                    if (totalBudget >= price) {
-                        addExpense("Transport", price);
-                        Toast.makeText(this, "Booked: " + title, Toast.LENGTH_SHORT).show();
+                    if (totalBudget >= (foodTotal + transportTotal + stayTotal + price)) {
+                        addExpense(category, price);
+                        Toast.makeText(this, "Added to list: " + title, Toast.LENGTH_SHORT).show();
                         suggestionsContainer.removeView(itemView);
+                        updateSavedSuggestionsAfterRemoval(title);
                     } else {
-                        Toast.makeText(this, "Insufficient budget!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Your current balance is insufficient for this booking.", Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -269,9 +259,23 @@ public class BudgetTracker extends AppCompatActivity {
             }
         } catch (Exception e) {
             Log.e(TAG, "Parsing Error", e);
-            tvSuggestionsTitle.setText("AI Parsing Error");
-            Toast.makeText(this, "Failed to parse AI response", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void updateSavedSuggestionsAfterRemoval(String titleToRemove) {
+        String savedJson = sharedPreferences.getString(PREF_SUGGESTIONS, "");
+        if (savedJson.isEmpty()) return;
+        try {
+            JSONArray array = new JSONArray(savedJson);
+            JSONArray newArray = new JSONArray();
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                if (!obj.optString("title").equals(titleToRemove)) {
+                    newArray.put(obj);
+                }
+            }
+            sharedPreferences.edit().putString(PREF_SUGGESTIONS, newArray.toString()).apply();
+        } catch (Exception ignored) {}
     }
 
     private void setupBottomNavigation() {
@@ -320,27 +324,32 @@ public class BudgetTracker extends AppCompatActivity {
 
     private void showResetConfirmationDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Reset Budget Tracker")
-                .setMessage("Are you sure you want to reset everything?")
-                .setPositiveButton("Reset", (dialog, which) -> resetBudgetData())
+                .setTitle("Confirm Reset")
+                .setMessage("This will clear your current budget and all recorded expenses. Are you sure?")
+                .setPositiveButton("Reset Records", (dialog, which) -> resetBudgetData())
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
     private void resetBudgetData() {
         totalBudget = 0; foodTotal = 0; transportTotal = 0; stayTotal = 0;
+        sharedPreferences.edit().putString(PREF_SUGGESTIONS, "").apply();
+        sharedPreferences.edit().putString(PREF_TRANSACTIONS, "").apply();
         saveBudgetData();
         transactionListContainer.removeAllViews();
+        suggestionsContainer.removeAllViews();
         updateBudgetUI();
+        Toast.makeText(this, "Records successfully cleared.", Toast.LENGTH_SHORT).show();
     }
 
     private void showSetBudgetDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Set Initial Budget");
+        builder.setTitle("Define Trip Budget");
         final EditText input = new EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint("Initial amount (₱)");
         builder.setView(input);
-        builder.setPositiveButton("Set", (d, w) -> {
+        builder.setPositiveButton("Save Budget", (d, w) -> {
             String val = input.getText().toString();
             if (!val.isEmpty()) {
                 totalBudget = Double.parseDouble(val);
@@ -348,16 +357,18 @@ public class BudgetTracker extends AppCompatActivity {
                 updateBudgetUI();
             }
         });
+        builder.setNegativeButton("Cancel", null);
         builder.show();
     }
 
     private void showAddFundsDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Add More Funds");
+        builder.setTitle("Add Funds");
         final EditText input = new EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setHint("Top up amount (₱)");
         builder.setView(input);
-        builder.setPositiveButton("Add", (d, w) -> {
+        builder.setPositiveButton("Top Up", (d, w) -> {
             String val = input.getText().toString();
             if (!val.isEmpty()) {
                 totalBudget += Double.parseDouble(val);
@@ -365,39 +376,77 @@ public class BudgetTracker extends AppCompatActivity {
                 updateBudgetUI();
             }
         });
+        builder.setNegativeButton("Cancel", null);
         builder.show();
     }
 
     private void showAddExpenseDialog() {
         String[] categories = {"Food", "Transport", "Stay"};
         new AlertDialog.Builder(this)
-                .setTitle("Log Expense")
+                .setTitle("Log New Expense")
                 .setItems(categories, (dialog, which) -> showAmountInputDialog(categories[which]))
                 .show();
     }
 
     private void showAmountInputDialog(String category) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("New " + category + " Expense");
+        builder.setTitle(category + " Expense");
         final EditText input = new EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setHint("Expense amount (₱)");
         builder.setView(input);
-        builder.setPositiveButton("Deduct", (d, w) -> {
+        builder.setPositiveButton("Log Expense", (d, w) -> {
             String val = input.getText().toString();
             if (!val.isEmpty()) {
                 addExpense(category, Double.parseDouble(val));
             }
         });
+        builder.setNegativeButton("Cancel", null);
         builder.show();
     }
 
     private void addExpense(String category, double amount) {
-        if (category.equals("Food")) foodTotal += amount;
-        else if (category.equals("Transport")) transportTotal += amount;
-        else if (category.equals("Stay")) stayTotal += amount;
+        if (category.equalsIgnoreCase("Food")) foodTotal += amount;
+        else if (category.equalsIgnoreCase("Transport")) transportTotal += amount;
+        else if (category.equalsIgnoreCase("Stay")) stayTotal += amount;
         saveBudgetData();
+        saveTransaction(category, amount);
         addTransactionToUI(category, amount);
         updateBudgetUI();
+    }
+
+    private void saveTransaction(String category, double amount) {
+        String savedTransactions = sharedPreferences.getString(PREF_TRANSACTIONS, "");
+        try {
+            JSONArray array;
+            if (savedTransactions.isEmpty()) {
+                array = new JSONArray();
+            } else {
+                array = new JSONArray(savedTransactions);
+            }
+            JSONObject obj = new JSONObject();
+            obj.put("category", category);
+            obj.put("amount", amount);
+            array.put(obj);
+            sharedPreferences.edit().putString(PREF_TRANSACTIONS, array.toString()).apply();
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving history", e);
+        }
+    }
+
+    private void loadTransactions() {
+        String savedTransactions = sharedPreferences.getString(PREF_TRANSACTIONS, "");
+        if (savedTransactions.isEmpty()) return;
+        try {
+            JSONArray array = new JSONArray(savedTransactions);
+            transactionListContainer.removeAllViews();
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                addTransactionToUI(obj.optString("category"), obj.optDouble("amount"));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading history", e);
+        }
     }
 
     private void addTransactionToUI(String category, double amount) {
@@ -405,20 +454,43 @@ public class BudgetTracker extends AppCompatActivity {
         ((TextView) transactionView.findViewById(R.id.tv_transaction_name)).setText(category);
         ((TextView) transactionView.findViewById(R.id.tv_transaction_amount)).setText("-₱" + String.format("%.2f", amount));
         ImageView icon = transactionView.findViewById(R.id.iv_transaction_icon);
-        if (category.equals("Food")) icon.setImageResource(R.drawable.ic_food);
-        else if (category.equals("Transport")) icon.setImageResource(R.drawable.ic_transport);
-        else if (category.equals("Stay")) icon.setImageResource(R.drawable.ic_hotel);
+        if (category.equalsIgnoreCase("Food")) icon.setImageResource(R.drawable.ic_food);
+        else if (category.equalsIgnoreCase("Transport")) icon.setImageResource(R.drawable.ic_transport);
+        else if (category.equalsIgnoreCase("Stay")) icon.setImageResource(R.drawable.ic_hotel);
+        
         transactionView.findViewById(R.id.btn_delete_transaction).setOnClickListener(v -> {
             removeExpense(category, amount);
             transactionListContainer.removeView(transactionView);
+            removeTransactionFromPrefs(category, amount);
         });
         transactionListContainer.addView(transactionView, 0);
     }
 
+    private void removeTransactionFromPrefs(String category, double amount) {
+        String savedTransactions = sharedPreferences.getString(PREF_TRANSACTIONS, "");
+        if (savedTransactions.isEmpty()) return;
+        try {
+            JSONArray array = new JSONArray(savedTransactions);
+            JSONArray newArray = new JSONArray();
+            boolean removed = false;
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                if (!removed && obj.optString("category").equalsIgnoreCase(category) && obj.optDouble("amount") == amount) {
+                    removed = true;
+                    continue;
+                }
+                newArray.put(obj);
+            }
+            sharedPreferences.edit().putString(PREF_TRANSACTIONS, newArray.toString()).apply();
+        } catch (Exception e) {
+            Log.e(TAG, "Error removing history entry", e);
+        }
+    }
+
     private void removeExpense(String category, double amount) {
-        if (category.equals("Food")) foodTotal -= amount;
-        else if (category.equals("Transport")) transportTotal -= amount;
-        else if (category.equals("Stay")) stayTotal -= amount;
+        if (category.equalsIgnoreCase("Food")) foodTotal -= amount;
+        else if (category.equalsIgnoreCase("Transport")) transportTotal -= amount;
+        else if (category.equalsIgnoreCase("Stay")) stayTotal -= amount;
         saveBudgetData();
         updateBudgetUI();
     }

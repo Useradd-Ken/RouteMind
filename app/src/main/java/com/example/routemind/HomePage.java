@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -56,6 +55,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -72,16 +72,16 @@ public class HomePage extends AppCompatActivity {
     private static final String TAG = "HomePage";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     private LinearLayout resultsContainer;
-    private TextView tvSectionTitle;
+    private TextView tvSectionTitle, tvGreeting;
     private View planTripCard;
     private PhotonService photonService;
     private FusedLocationProviderClient fusedLocationClient;
-    private double currentLat = 14.5995; // Default fallback: Manila
-    private double currentLon = 120.9842;
-    private String currentDestination = "Manila";
+    private double currentLat = 0; 
+    private double currentLon = 0;
+    private String currentDestination = "current location";
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
-    private static final String GEMINI_API_KEY = "AIzaSyB41-2AFDPcsfndGns8RZASUtW77K08r60";
+    private static final String GEMINI_API_KEY = "AIzaSyA4pwZY4jYN08D6IBmv_ENKktKXPCR7wro";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,8 +98,11 @@ public class HomePage extends AppCompatActivity {
 
         resultsContainer = findViewById(R.id.results_container);
         tvSectionTitle = findViewById(R.id.tv_section_title);
+        tvGreeting = findViewById(R.id.tv_greeting);
         planTripCard = findViewById(R.id.plan_trip_card);
         
+        setGreeting();
+
         findViewById(R.id.btn_generate_now).setOnClickListener(v -> {
             startActivity(new Intent(HomePage.this, TripActivity.class));
         });
@@ -139,18 +142,29 @@ public class HomePage extends AppCompatActivity {
             return false;
         });
         
-        findViewById(R.id.category_food).setOnClickListener(v -> fetchAIRecommendations("restaurants", "Best Food in " + currentDestination));
-        findViewById(R.id.category_stays).setOnClickListener(v -> fetchAIRecommendations("hotels", "Top Stays in " + currentDestination));
-        findViewById(R.id.category_places).setOnClickListener(v -> fetchAIRecommendations("tourist attractions", "Must-Visit Places in " + currentDestination));
+        findViewById(R.id.category_food).setOnClickListener(v -> fetchAIRecommendations("restaurants", "top dining spots"));
+        findViewById(R.id.category_stays).setOnClickListener(v -> fetchAIRecommendations("hotels", "premium accommodations"));
+        findViewById(R.id.category_places).setOnClickListener(v -> fetchAIRecommendations("tourist attractions", "must-visit locations"));
         
         setupBottomNavigation();
         checkLocationPermissionAndFetch();
     }
 
+    private void setGreeting() {
+        if (tvGreeting == null) return;
+        Calendar c = Calendar.getInstance();
+        int timeOfDay = c.get(Calendar.HOUR_OF_DAY);
+        String greeting;
+        if (timeOfDay >= 0 && timeOfDay < 12) greeting = "Good morning";
+        else if (timeOfDay >= 12 && timeOfDay < 16) greeting = "Good afternoon";
+        else if (timeOfDay >= 16 && timeOfDay < 21) greeting = "Good evening";
+        else greeting = "Hello";
+        tvGreeting.setText(greeting + ", traveler!");
+    }
+
     private void checkLocationPermissionAndFetch() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         } else {
             fetchCurrentLocation();
         }
@@ -164,12 +178,10 @@ public class HomePage extends AppCompatActivity {
                     currentLon = location.getLongitude();
                     updateLocationName(currentLat, currentLon);
                 } else {
-                    Log.d(TAG, "Location is null, using Manila as fallback.");
                     updateTitleOnly();
                 }
             });
         } catch (SecurityException e) {
-            Log.e(TAG, "Location permission error", e);
             updateTitleOnly();
         }
     }
@@ -180,21 +192,15 @@ public class HomePage extends AppCompatActivity {
             List<Address> addresses = geocoder.getFromLocation(lat, lon, 1);
             if (addresses != null && !addresses.isEmpty()) {
                 Address address = addresses.get(0);
-                String city = address.getLocality();
-                if (city == null) city = address.getSubAdminArea();
-                if (city != null) {
-                    currentDestination = city;
-                }
+                String city = address.getLocality() != null ? address.getLocality() : address.getSubAdminArea();
+                if (city != null) currentDestination = city;
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Geocoder error", e);
-        }
+        } catch (IOException ignored) {}
         updateTitleOnly();
     }
 
     private synchronized void updateTitleOnly() {
         tvSectionTitle.setText("Explore " + currentDestination);
-        // Removed automatic fetchAIRecommendations to save quota and prevent automatic requests on launch.
     }
 
     @Override
@@ -204,15 +210,14 @@ public class HomePage extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 fetchCurrentLocation();
             } else {
-                Toast.makeText(this, "Permission denied. Using default location.", Toast.LENGTH_SHORT).show();
                 updateTitleOnly();
             }
         }
     }
 
     private void performSearch(String query) {
-        tvSectionTitle.setText("Searching for \"" + query + "\"...");
-        photonService.search(query, 15).enqueue(new Callback<PhotonResponse>() {
+        tvSectionTitle.setText("Finding matches for \"" + query + "\"...");
+        photonService.search(query, 10).enqueue(new Callback<PhotonResponse>() {
             @Override
             public void onResponse(Call<PhotonResponse> call, Response<PhotonResponse> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().features != null) {
@@ -220,54 +225,52 @@ public class HomePage extends AppCompatActivity {
                     for (Feature f : response.body().features) {
                         if (f.properties.name == null) continue;
                         ExploreItem item = new ExploreItem(f.properties.name, f.properties.getDisplayName(), "");
-                        try {
-                            item.lon = f.geometry.coordinates.get(0);
-                            item.lat = f.geometry.coordinates.get(1);
-                            // Sanitize search name for URL keywords
-                            String searchKey = f.properties.name.toLowerCase().replaceAll("[^a-z0-9]", "");
-                            item.imageUrl = "https://loremflickr.com/400/300/" + searchKey;
-                            results.add(item);
-                        } catch (Exception ignored) {}
+                        item.lon = f.geometry.coordinates.get(0);
+                        item.lat = f.geometry.coordinates.get(1);
+                        String key = f.properties.name.toLowerCase().replaceAll("[^a-z0-9]", " ").trim();
+                        item.imageUrl = "https://image.pollinations.ai/prompt/professional%20photo%20of%20" + key.replace(" ", "%20") + "?width=400&height=300&nologo=true";
+                        results.add(item);
                     }
                     if (results.isEmpty()) {
-                        tvSectionTitle.setText("No results found for \"" + query + "\"");
+                        tvSectionTitle.setText("No destinations found for \"" + query + "\"");
                         resultsContainer.removeAllViews();
                     } else {
-                        showExploreResults("Search Results", results, true);
+                        showExploreResults("Select your destination", results, true);
                     }
                 }
             }
             @Override public void onFailure(Call<PhotonResponse> call, Throwable t) {
-                tvSectionTitle.setText("Connection failed");
+                tvSectionTitle.setText("Connectivity issue. Please check your network.");
             }
         });
     }
 
-    private void fetchAIRecommendations(String category, String title) {
+    private void fetchAIRecommendations(String category, String displayCategory) {
         if (GEMINI_API_KEY.isEmpty()) {
-            tvSectionTitle.setText("API Key Missing");
+            tvSectionTitle.setText("Personalized discovery is offline.");
             return;
         }
 
-        tvSectionTitle.setText("Finding " + title + "...");
+        tvSectionTitle.setText("Curating " + displayCategory + " in " + currentDestination + "...");
         List<SafetySetting> safetySettings = new ArrayList<>();
         safetySettings.add(new SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE));
         safetySettings.add(new SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE));
         safetySettings.add(new SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE));
         safetySettings.add(new SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE));
+        
         GenerationConfig.Builder configBuilder = new GenerationConfig.Builder();
         configBuilder.responseMimeType = "application/json";
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
-        RequestOptions requestOptions = new RequestOptions();
         
-        GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config, safetySettings, requestOptions);
+        GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config, safetySettings);
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
         
         String prompt = "List 10 specific popular " + category + " in " + currentDestination + ". " +
-                "For each, provide a short 1-sentence description and a specific imageUrl using: 'https://loremflickr.com/400/300/[keywords]'. " +
-                "Replace [keywords] with 2-3 simple lowercase tags for that exact place (e.g., 'boracay,beach'). No accents. " +
-                "Return as a JSON array of objects with fields: \"title\", \"subtitle\", \"imageUrl\". Return ONLY the raw JSON array.";
+                "Format: raw JSON array of objects {\"title\", \"subtitle\", \"imageUrl\"}. " +
+                "Description in 'subtitle'. For 'imageUrl', use 'https://image.pollinations.ai/prompt/[descriptive_prompt]?width=400&height=300&nologo=true' " +
+                "where [descriptive_prompt] is a short, specific description of a high-quality photo for the item. " +
+                "Return ONLY the array.";
         
         Content content = new Content.Builder().addText(prompt).build();
         Executor executor = Executors.newSingleThreadExecutor();
@@ -276,39 +279,22 @@ public class HomePage extends AppCompatActivity {
             @Override
             public void onSuccess(GenerateContentResponse result) {
                 try {
-                    String resultText = result.getText();
-                    if (resultText == null || resultText.isEmpty()) throw new Exception("AI returned empty content");
-                    
-                    String cleanJson = resultText.trim();
-                    if (cleanJson.contains("[") && cleanJson.contains("]")) {
-                        cleanJson = cleanJson.substring(cleanJson.indexOf("["), cleanJson.lastIndexOf("]") + 1);
-                    }
-                    
+                    String json = result.getText();
+                    if (json == null || json.isEmpty()) throw new Exception("Empty AI output");
+                    String cleanJson = json.substring(json.indexOf("["), json.lastIndexOf("]") + 1);
                     JSONArray array = new JSONArray(cleanJson);
                     List<ExploreItem> items = new ArrayList<>();
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject obj = array.getJSONObject(i);
                         items.add(new ExploreItem(obj.getString("title"), obj.getString("subtitle"), obj.getString("imageUrl")));
                     }
-                    runOnUiThread(() -> showExploreResults(title, items, false));
+                    runOnUiThread(() -> showExploreResults("Featured " + displayCategory, items, false));
                 } catch (Exception e) {
-                    Log.e(TAG, "AI Error", e);
-                    runOnUiThread(() -> tvSectionTitle.setText("AI Parse Error. Please retry."));
+                    runOnUiThread(() -> tvSectionTitle.setText("We couldn't refresh recommendations right now."));
                 }
             }
             @Override public void onFailure(Throwable t) {
-                Log.e(TAG, "AI Fetch Failed", t);
-                runOnUiThread(() -> {
-                    String msg = "AI Generation Failed";
-                    if (t.getMessage() != null) {
-                        if (t.getMessage().contains("429") || t.getMessage().contains("Quota")) {
-                            msg = "AI Quota Exceeded. Please wait 1 min.";
-                        } else if (t.getMessage().contains("403")) {
-                            msg = "AI Key Permission Error.";
-                        }
-                    }
-                    tvSectionTitle.setText(msg);
-                });
+                runOnUiThread(() -> tvSectionTitle.setText("Recommendation engine unavailable."));
             }
         }, executor);
     }
@@ -322,8 +308,9 @@ public class HomePage extends AppCompatActivity {
             View itemView = inflater.inflate(R.layout.item_explore, resultsContainer, false);
             ((TextView) itemView.findViewById(R.id.item_title)).setText(item.title);
             ((TextView) itemView.findViewById(R.id.item_subtitle)).setText(item.subtitle);
-            ImageView imageView = itemView.findViewById(R.id.item_image);
-            Glide.with(this).load(item.imageUrl).placeholder(R.drawable.ic_map).centerCrop().into(imageView);
+            ImageView img = itemView.findViewById(R.id.item_image);
+            Glide.with(this).load(item.imageUrl).placeholder(R.drawable.ic_map).centerCrop().into(img);
+            
             itemView.setOnClickListener(v -> {
                 if (isSearch) {
                     currentLat = item.lat;
@@ -332,8 +319,9 @@ public class HomePage extends AppCompatActivity {
                     Toast.makeText(this, "Discovery region updated to " + item.title, Toast.LENGTH_SHORT).show();
                     ((EditText)findViewById(R.id.search_destinations)).setText("");
                     ((EditText)findViewById(R.id.search_destinations)).clearFocus();
-                    
                     updateTitleOnly();
+                    // Automatic generation of "Places" on selection
+                    fetchAIRecommendations("tourist attractions", "must-visit attractions");
                 }
             });
             resultsContainer.addView(itemView);
@@ -349,12 +337,12 @@ public class HomePage extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setSelectedItemId(R.id.nav_home);
         bottomNav.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) { clearDisplay(); return true; }
-            else if (itemId == R.id.nav_activities) { startActivity(new Intent(this, BudgetTracker.class)); return true; }
-            else if (itemId == R.id.nav_trip_history) { startActivity(new Intent(this, TripHistory.class)); return true; }
-            else if (itemId == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); return true; }
-            else if (itemId == R.id.nav_user_profile) { startActivity(new Intent(this, UserProfile.class)); return true; }
+            int id = item.getItemId();
+            if (id == R.id.nav_home) { clearDisplay(); return true; }
+            else if (id == R.id.nav_activities) { startActivity(new Intent(this, BudgetTracker.class)); return true; }
+            else if (id == R.id.nav_trip_history) { startActivity(new Intent(this, TripHistory.class)); return true; }
+            else if (id == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); return true; }
+            else if (id == R.id.nav_user_profile) { startActivity(new Intent(this, UserProfile.class)); return true; }
             return false;
         });
     }
@@ -368,10 +356,7 @@ public class HomePage extends AppCompatActivity {
     }
 
     public interface PhotonService {
-        @GET("api/")
-        Call<PhotonResponse> search(@Query("q") String query, @Query("limit") int limit);
-        @GET("api/")
-        Call<PhotonResponse> searchNearby(@Query("q") String query, @Query("lat") double lat, @Query("lon") double lon, @Query("limit") int limit);
+        @GET("api/") Call<PhotonResponse> search(@Query("q") String query, @Query("limit") int limit);
     }
 
     public static class PhotonResponse { @SerializedName("features") public List<Feature> features; }
@@ -384,10 +369,10 @@ public class HomePage extends AppCompatActivity {
         @SerializedName("city") public String city;
         @SerializedName("country") public String country;
         public String getDisplayName() {
-            String display = (name != null ? name : "");
-            if (city != null && !city.equalsIgnoreCase(name)) display += ", " + city;
-            if (country != null) display += ", " + country;
-            return display;
+            String d = name != null ? name : "";
+            if (city != null && !city.equalsIgnoreCase(name)) d += ", " + city;
+            if (country != null) d += ", " + country;
+            return d;
         }
     }
     public static class Geometry { @SerializedName("coordinates") public List<Double> coordinates; }
@@ -400,12 +385,16 @@ public class HomePage extends AppCompatActivity {
             service = new Retrofit.Builder().baseUrl("https://photon.komoot.io/").addConverterFactory(GsonConverterFactory.create()).build().create(PhotonService.class);
         }
         @Override public int getCount() { return resultList.size(); }
-        @Nullable @Override public Feature getItem(int position) { return (position >= 0 && position < resultList.size()) ? resultList.get(position) : null; }
+        @Nullable @Override public Feature getItem(int position) { 
+            if (position >= 0 && position < resultList.size()) return resultList.get(position);
+            return null;
+        }
         @NonNull @Override public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
             if (convertView == null) convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_dropdown, parent, false);
-            TextView tv = convertView.findViewById(R.id.tv_dropdown_item);
-            Feature item = getItem(position);
-            if (item != null) tv.setText(item.properties.getDisplayName());
+            Feature feature = getItem(position);
+            if (feature != null && feature.properties != null) {
+                ((TextView) convertView.findViewById(R.id.tv_dropdown_item)).setText(feature.properties.getDisplayName());
+            }
             return convertView;
         }
         @NonNull @Override public Filter getFilter() {
@@ -414,25 +403,30 @@ public class HomePage extends AppCompatActivity {
                     FilterResults fr = new FilterResults();
                     if (constraint != null && constraint.length() >= 1) {
                         try {
-                            Response<PhotonResponse> response = service.search(constraint.toString(), 15).execute();
-                            if (response.isSuccessful() && response.body() != null) {
-                                fr.values = response.body().features;
-                                fr.count = response.body().features.size();
+                            Response<PhotonResponse> r = service.search(constraint.toString(), 10).execute();
+                            if (r.isSuccessful() && r.body() != null) {
+                                fr.values = r.body().features;
+                                fr.count = r.body().features != null ? r.body().features.size() : 0;
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            Log.e("PhotonAdapter", "Search error", e);
+                        }
                     }
                     return fr;
                 }
                 @Override protected void publishResults(CharSequence constraint, FilterResults fr) {
-                    if (fr != null && fr.values != null) {
-                        resultList = (List<Feature>) fr.values;
-                        notifyDataSetChanged();
-                    } else {
-                        resultList = new ArrayList<>();
-                        notifyDataSetInvalidated();
+                    if (fr != null && fr.values != null) { 
+                        resultList = (List<Feature>) fr.values; 
+                        notifyDataSetChanged(); 
+                    } else { 
+                        resultList = new ArrayList<>(); 
+                        notifyDataSetInvalidated(); 
                     }
                 }
-                @Override public CharSequence convertResultToString(Object r) { return ((Feature) r).properties.getDisplayName(); }
+                @Override public CharSequence convertResultToString(Object r) { 
+                    if (r instanceof Feature) return ((Feature) r).properties.getDisplayName();
+                    return super.convertResultToString(r);
+                }
             };
         }
     }

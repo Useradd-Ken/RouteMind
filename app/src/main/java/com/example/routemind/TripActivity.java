@@ -42,7 +42,8 @@ public class TripActivity extends AppCompatActivity {
 
         HomePage.PhotonAutocompleteAdapter adapter = new HomePage.PhotonAutocompleteAdapter(this);
         etDestination.setAdapter(adapter);
-        etDestination.setThreshold(3);
+        // Changed threshold to 1 to match activity_trip.xml and improve responsiveness
+        etDestination.setThreshold(1);
 
         etStartDate.setOnClickListener(v -> showDatePicker(etStartDate));
         etEndDate.setOnClickListener(v -> showDatePicker(etEndDate));
@@ -74,14 +75,21 @@ public class TripActivity extends AppCompatActivity {
             if (!budget.isEmpty()) {
                 try {
                     budgetValue = Double.parseDouble(budget);
-                    SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putLong("totalBudget", Double.doubleToLongBits(budgetValue));
-                    editor.apply();
                 } catch (NumberFormatException ignored) {}
             }
 
-            Toast.makeText(TripActivity.this, "Trip Created Successfully!", Toast.LENGTH_LONG).show();
+            // Reset Budget Tracker Data for a fresh Itinerary
+            SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putLong("totalBudget", Double.doubleToLongBits(budgetValue));
+            editor.putLong("foodTotal", Double.doubleToLongBits(0));
+            editor.putLong("transportTotal", Double.doubleToLongBits(0));
+            editor.putLong("stayTotal", Double.doubleToLongBits(0));
+            editor.putString("savedSuggestions", ""); 
+            editor.putString("savedTransactions", "");
+            editor.apply();
+
+            Toast.makeText(TripActivity.this, "Initializing your trip itinerary...", Toast.LENGTH_LONG).show();
             
             Intent intent = new Intent(TripActivity.this, BudgetTracker.class);
             intent.putExtra("DESTINATION", destination);
