@@ -5,19 +5,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.snackbar.Snackbar;
 
 public class MainActivity extends AppCompatActivity {
 
-    EditText etUsername, etPassword;
-    Button btnLogin;
-    ImageView btnGoogleLogin;
-    TextView tvResult;
-
-    // Static variable for one-time session email
+    private EditText etUsername, etPassword;
     public static String sessionEmail = "";
 
     @Override
@@ -27,40 +20,32 @@ public class MainActivity extends AppCompatActivity {
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
-        btnLogin   = findViewById(R.id.btnLogin);
-        btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
-        tvResult   = findViewById(R.id.tvResult);
+        Button btnLogin = findViewById(R.id.btnLogin);
+        View btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
 
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String user = etUsername.getText().toString();
-                String pass = etPassword.getText().toString();
+        btnLogin.setOnClickListener(v -> {
+            String user = etUsername.getText().toString();
+            String pass = etPassword.getText().toString();
 
-                if (user.contains("@") && pass.equals("1234")) {
-                    sessionEmail = user;
-                    Intent intent = new Intent(MainActivity.this, HomePage.class);
-                    startActivity(intent);
-                    finish();
-                } else if (user.equals("admin") && pass.equals("1234")) {
-                    sessionEmail = "admin@routemind.com";
-                    Intent intent = new Intent(MainActivity.this, HomePage.class);
-                    startActivity(intent);
-                    finish();
-                } else {
-                    tvResult.setText("Login failed! Use an email and '1234'");
-                }
+            if (user.contains("@") && pass.equals("1234")) {
+                sessionEmail = user;
+                navigateToHome();
+            } else if (user.equals("admin") && pass.equals("1234")) {
+                sessionEmail = "admin@routemind.com";
+                navigateToHome();
+            } else {
+                Snackbar.make(v, "The credentials you entered don't match. Please try again.", Snackbar.LENGTH_LONG).show();
             }
         });
 
-        btnGoogleLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sessionEmail = "google_user@gmail.com";
-                Intent intent = new Intent(MainActivity.this, HomePage.class);
-                startActivity(intent);
-                finish();
-            }
+        btnGoogleLogin.setOnClickListener(v -> {
+            sessionEmail = "google_user@gmail.com";
+            navigateToHome();
         });
+    }
+
+    private void navigateToHome() {
+        startActivity(new Intent(MainActivity.this, HomePage.class));
+        finish();
     }
 }

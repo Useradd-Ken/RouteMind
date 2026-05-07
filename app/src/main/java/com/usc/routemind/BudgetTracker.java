@@ -63,7 +63,10 @@ public class BudgetTracker extends AppCompatActivity {
 
         findViewById(R.id.btn_set_budget).setOnClickListener(v -> showSetBudgetDialog());
         findViewById(R.id.btn_reset_budget).setOnClickListener(v -> showResetConfirmationDialog());
-        btnEditBudget.setOnClickListener(v -> showAddFundsDialog());
+        
+        if (btnEditBudget != null) {
+            btnEditBudget.setOnClickListener(v -> showAddFundsDialog());
+        }
 
         View.OnClickListener expenseListener = v -> {
             if (totalBudget <= 0) {
@@ -209,7 +212,7 @@ public class BudgetTracker extends AppCompatActivity {
 
     private void addTransactionToUI(String category, double amount) {
         View transactionView = getLayoutInflater().inflate(R.layout.item_transaction, transactionListContainer, false);
-        ((TextView) transactionView.findViewById(R.id.tv_transaction_name)).setText(category);
+        ((TextView) transactionView.findViewById(R.id.tv_transaction_category)).setText(category);
         ((TextView) transactionView.findViewById(R.id.tv_transaction_amount)).setText("-₱" + String.format("%.2f", amount));
         
         ImageView icon = transactionView.findViewById(R.id.iv_transaction_icon);
@@ -248,7 +251,9 @@ public class BudgetTracker extends AppCompatActivity {
         tvRemainingBalance.setText("₱" + String.format("%.2f", remaining));
         budgetProgress.setProgress(progress);
 
-        btnEditBudget.setVisibility(totalBudget > 0 ? View.VISIBLE : View.GONE);
+        if (btnEditBudget != null) {
+            btnEditBudget.setVisibility(totalBudget > 0 ? View.VISIBLE : View.GONE);
+        }
 
         if (remaining < 0) tvRemainingBalance.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
         else tvRemainingBalance.setTextColor(getResources().getColor(android.R.color.white));

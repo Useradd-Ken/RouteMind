@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7FA"
+    android:background="@color/background_light"
     tools:context=".MapsActivity">
 
     <!-- Header -->
@@ -13,23 +13,25 @@
         android:id="@+id/tv_maps_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="48dp"
         android:text="Explore"
-        android:textColor="#0D254F"
+        android:textColor="@color/text_main"
         android:textSize="32sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Search Bar -->
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/search_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
+        android:layout_marginTop="20dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp"
         app:layout_constraintTop_toBottomOf="@id/tv_maps_header">
 
         <LinearLayout
@@ -37,51 +39,55 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="8dp">
+            android:padding="12dp">
 
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"
-                android:src="@android:drawable/ic_menu_search"
-                app:tint="@android:color/darker_gray" />
+                android:src="@drawable/ic_search"
+                app:tint="@color/text_secondary" />
 
             <EditText
                 android:id="@+id/et_map_search"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@null"
                 android:hint="Search for a place..."
                 android:paddingHorizontal="12dp"
-                android:textSize="16sp" />
+                android:textColor="@color/text_main"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="15sp" />
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Map Placeholder -->
     <FrameLayout
         android:id="@+id/map_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="20dp"
-        android:background="#DFE3E8"
+        android:layout_marginTop="24dp"
+        android:background="#E2E8F0"
         app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
         app:layout_constraintTop_toBottomOf="@id/search_card">
 
         <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:layout_gravity="center"
             android:alpha="0.2"
-            android:src="@android:drawable/ic_menu_mapmode" />
+            android:src="@drawable/ic_map"
+            app:tint="@color/text_main" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="60dp"
-            android:text="Map View Placeholder"
-            android:textColor="#919EAB"
+            android:text="Interactive Map Loading..."
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
             android:textStyle="italic" />
 
     </FrameLayout>
@@ -90,12 +96,13 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#0D254F"
-        app:itemIconTint="@android:color/white"
-        app:itemTextColor="@android:color/white"
-        app:itemRippleColor="#33FFFFFF"
-        app:labelVisibilityMode="labeled"
+        android:layout_height="72dp"
+        android:background="@color/white"
+        app:elevation="24dp"
+        app:itemIconSize="24dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

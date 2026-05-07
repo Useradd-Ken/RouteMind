@@ -5,13 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -20,11 +21,9 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class TripActivity extends AppCompatActivity {
-
-    AutoCompleteTextView etDestination;
-    EditText etStartDate, etEndDate, etBudget, etInterests;
-    Button btnCreateTrip;
-    ImageView btnBack;
+    private static final String TAG = "TripActivity";
+    private AutoCompleteTextView etDestination;
+    private EditText etStartDate, etEndDate, etBudget, etInterests;
     private static final String PREF_NAME = "BudgetPrefs";
 
     @Override
@@ -37,96 +36,94 @@ public class TripActivity extends AppCompatActivity {
         etEndDate     = findViewById(R.id.etEndDate);
         etBudget      = findViewById(R.id.etBudget);
         etInterests   = findViewById(R.id.etInterests);
-        btnCreateTrip = findViewById(R.id.btnCreateTrip);
-        btnBack       = findViewById(R.id.btnBack);
-
+        
         HomePage.PhotonAutocompleteAdapter adapter = new HomePage.PhotonAutocompleteAdapter(this);
         etDestination.setAdapter(adapter);
-        // Changed threshold to 1 to match activity_trip.xml and improve responsiveness
         etDestination.setThreshold(1);
+        etDestination.setOnItemClickListener((parent, view, position, id) -> {
+            HomePage.Feature feature = (HomePage.Feature) parent.getItemAtPosition(position);
+            if (feature != null && feature.properties != null) {
+                etDestination.setText(feature.properties.getDisplayName());
+            }
+        });
 
         etStartDate.setOnClickListener(v -> showDatePicker(etStartDate));
         etEndDate.setOnClickListener(v -> showDatePicker(etEndDate));
 
-        btnBack.setOnClickListener(v -> {
-            startActivity(new Intent(TripActivity.this, HomePage.class));
+        findViewById(R.id.btnBack).setOnClickListener(v -> {
+            startActivity(new Intent(this, HomePage.class));
             finish();
         });
 
-        btnCreateTrip.setOnClickListener(v -> {
-            String destination = etDestination.getText().toString();
-            String startDateStr = etStartDate.getText().toString();
-            String endDateStr   = etEndDate.getText().toString();
-            String budget      = etBudget.getText().toString();
-            String interests   = etInterests.getText().toString();
+        findViewById(R.id.btnCreateTrip).setOnClickListener(v -> handleTripCreation(v));
+        setupBottomNavigation();
+    }
 
-            if (destination.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty()) {
-                Toast.makeText(TripActivity.this, "Please fill in Destination and Dates", Toast.LENGTH_SHORT).show();
-                return;
-            }
+    private void handleTripCreation(android.view.View v) {
+        String dest = etDestination.getText().toString();
+        String start = etStartDate.getText().toString();
+        String end = etEndDate.getText().toString();
+        String budget = etBudget.getText().toString();
+        String interests = etInterests.getText().toString();
 
-            long days = calculateDays(startDateStr, endDateStr);
-            if (days < 1) {
-                Toast.makeText(TripActivity.this, "End date must be after start date", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (dest.isEmpty() || start.isEmpty() || end.isEmpty() || budget.isEmpty()) {
+            Snackbar.make(v, "Please fill in all required fields.", Snackbar.LENGTH_SHORT).show();
+            return;
+        }
 
-            double budgetValue = 0;
-            if (!budget.isEmpty()) {
-                try {
-                    budgetValue = Double.parseDouble(budget);
-                } catch (NumberFormatException ignored) {}
-            }
+        long days = calculateDays(start, end);
+        if (days < 1) {
+            Snackbar.make(v, "Return date must be after start date.", Snackbar.LENGTH_SHORT).show();
+            return;
+        }
 
-            // Reset Budget Tracker Data for a fresh Itinerary
-            SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putLong("totalBudget", Double.doubleToLongBits(budgetValue));
-            editor.putLong("foodTotal", Double.doubleToLongBits(0));
-            editor.putLong("transportTotal", Double.doubleToLongBits(0));
-            editor.putLong("stayTotal", Double.doubleToLongBits(0));
-            editor.putString("savedSuggestions", ""); 
-            editor.putString("savedTransactions", "");
-            editor.apply();
+        double budgetValue;
+        try {
+            budgetValue = Double.parseDouble(budget);
+        } catch (NumberFormatException e) {
+            Snackbar.make(v, "Invalid budget amount.", Snackbar.LENGTH_SHORT).show();
+            return;
+        }
 
-            Toast.makeText(TripActivity.this, "Initializing your trip itinerary...", Toast.LENGTH_LONG).show();
-            
-            Intent intent = new Intent(TripActivity.this, BudgetTracker.class);
-            intent.putExtra("DESTINATION", destination);
-            intent.putExtra("START_DATE", startDateStr);
-            intent.putExtra("END_DATE", endDateStr);
+        SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
+        editor.putLong("totalBudget", Double.doubleToLongBits(budgetValue));
+        editor.putLong("foodTotal", 0);
+        editor.putLong("transportTotal", 0);
+        editor.putLong("stayTotal", 0);
+        editor.putString("savedSuggestions", ""); 
+        editor.putString("savedTransactions", "");
+        editor.apply();
+
+        Snackbar.make(v, "Preparing your itinerary...", Snackbar.LENGTH_SHORT).show();
+        v.postDelayed(() -> {
+            Intent intent = new Intent(this, BudgetTracker.class);
+            intent.putExtra("DESTINATION", dest);
+            intent.putExtra("START_DATE", start);
+            intent.putExtra("END_DATE", end);
             intent.putExtra("BUDGET", budgetValue);
             intent.putExtra("INTERESTS", interests);
             intent.putExtra("DURATION_DAYS", days);
             startActivity(intent);
             finish();
-        });
+        }, 1500);
+    }
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_maps);
-        bottomNav.setOnItemSelectedListener(item -> {
+    private void setupBottomNavigation() {
+        BottomNavigationView nav = findViewById(R.id.bottom_navigation);
+        nav.setSelectedItemId(R.id.nav_maps);
+        nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                startActivity(new Intent(this, HomePage.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(this, BudgetTracker.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_maps) {
-                return true;
-            } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(this, TripHistory.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_user_profile) {
-                startActivity(new Intent(this, UserProfile.class));
-                finish();
-                return true;
-            }
-            return false;
+            if (id == R.id.nav_home) navigateTo(HomePage.class);
+            else if (id == R.id.nav_activities) navigateTo(BudgetTracker.class);
+            else if (id == R.id.nav_trip_history) navigateTo(TripHistory.class);
+            else if (id == R.id.nav_user_profile) navigateTo(UserProfile.class);
+            return id == R.id.nav_maps;
         });
+    }
+
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(this, cls));
+        finish();
     }
 
     private long calculateDays(String start, String end) {
@@ -135,24 +132,15 @@ public class TripActivity extends AppCompatActivity {
             Date d1 = sdf.parse(start);
             Date d2 = sdf.parse(end);
             if (d1 != null && d2 != null) {
-                long diff = d2.getTime() - d1.getTime();
-                return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) + 1;
+                return TimeUnit.DAYS.convert(d2.getTime() - d1.getTime(), TimeUnit.MILLISECONDS) + 1;
             }
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+        } catch (ParseException e) { Log.e(TAG, "Date error", e); }
         return 0;
     }
 
-    private void showDatePicker(EditText editText) {
+    private void showDatePicker(EditText et) {
         final Calendar c = Calendar.getInstance();
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH);
-        int day = c.get(Calendar.DAY_OF_MONTH);
-
-        new DatePickerDialog(this, (view, year1, monthOfYear, dayOfMonth) -> {
-            String selectedDate = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
-            editText.setText(selectedDate);
-        }, year, month, day).show();
+        new DatePickerDialog(this, (view, y, m, d) -> et.setText(d + "/" + (m + 1) + "/" + y),
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 }

@@ -2,17 +2,14 @@ package com.example.routemind;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.snackbar.Snackbar;
 
 public class UserProfile extends AppCompatActivity {
 
@@ -22,7 +19,6 @@ public class UserProfile extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_user_profile);
 
-        // Fetch session email from MainActivity
         EditText editEmail = findViewById(R.id.edit_email);
         if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
             editEmail.setText(MainActivity.sessionEmail);
@@ -34,40 +30,29 @@ public class UserProfile extends AppCompatActivity {
             return insets;
         });
 
-        Button btnSave = findViewById(R.id.btn_save);
-        btnSave.setOnClickListener(v -> {
-            Toast.makeText(UserProfile.this, "Profile and Password Updated Successfully!", Toast.LENGTH_SHORT).show();
-        });
+        findViewById(R.id.btn_save).setOnClickListener(v -> 
+            Snackbar.make(v, "Profile saved successfully.", Snackbar.LENGTH_SHORT).show()
+        );
 
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_user_profile);
+        setupBottomNavigation();
+    }
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+    private void setupBottomNavigation() {
+        BottomNavigationView nav = findViewById(R.id.bottom_navigation);
+        nav.setSelectedItemId(R.id.nav_user_profile);
+        nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                startActivity(new Intent(getApplicationContext(), HomePage.class));
-                overridePendingTransition(0, 0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_activities) {
-                startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
-                overridePendingTransition(0, 0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_maps) {
-                startActivity(new Intent(getApplicationContext(), TripActivity.class));
-                overridePendingTransition(0, 0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(getApplicationContext(), TripHistory.class));
-                overridePendingTransition(0, 0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_user_profile) {
-                return true;
-            }
-            return false;
+            if (id == R.id.nav_home) navigateTo(HomePage.class);
+            else if (id == R.id.nav_activities) navigateTo(BudgetTracker.class);
+            else if (id == R.id.nav_maps) navigateTo(TripActivity.class);
+            else if (id == R.id.nav_trip_history) navigateTo(TripHistory.class);
+            return id == R.id.nav_user_profile;
         });
+    }
+
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(this, cls));
+        overridePendingTransition(0, 0);
+        finish();
     }
 }

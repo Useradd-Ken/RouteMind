@@ -5,61 +5,79 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7FA"
+    android:background="@color/background_light"
     tools:context=".BudgetTracker">
+
+    <ImageView
+        android:id="@+id/btnBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="8dp"
+        android:src="@drawable/ic_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/text_main" />
+
+    <TextView
+        android:id="@+id/tv_tracker_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
+        android:text="Spending Tracker"
+        android:textColor="@color/text_main"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_reset_budget"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="Clear History"
+        android:textAllCaps="false"
+        android:textColor="@color/text_secondary"
+        app:icon="@drawable/ic_delete"
+        app:iconTint="@color/text_secondary"
+        app:layout_constraintBottom_toBottomOf="@id/tv_tracker_header"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tv_tracker_header" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_marginTop="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="100dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintTop_toBottomOf="@id/tv_tracker_header">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingHorizontal="20dp">
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:text="Travel Budget"
-                    android:textColor="#1A1C1E"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_reset_budget"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:text="Reset All"
-                    android:textAllCaps="false"
-                    android:textColor="@android:color/holo_red_dark"
-                    app:icon="@drawable/ic_delete"
-                    app:iconTint="@android:color/holo_red_dark" />
-            </RelativeLayout>
-
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                app:cardBackgroundColor="@color/nav_background"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="4dp">
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/primary_color"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="28dp">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -68,7 +86,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Available to Spend"
+                            android:text="Available Balance"
                             android:textColor="#B0BEC5"
                             android:textSize="14sp" />
 
@@ -77,8 +95,8 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_alignParentEnd="true"
-                            android:src="@drawable/ic_edit"
-                            android:visibility="gone"
+                            android:src="@drawable/ic_back"
+                            android:rotation="180"
                             app:tint="@color/white" />
                     </RelativeLayout>
 
@@ -95,7 +113,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="24dp"
                         android:orientation="horizontal">
 
                         <LinearLayout
@@ -106,16 +124,16 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Total Expenses"
+                                android:text="Spent"
                                 android:textColor="#B0BEC5"
-                                android:textSize="11sp" />
+                                android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tv_total_spent"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="₱0"
                                 android:textColor="@color/white"
-                                android:textSize="14sp"
+                                android:textSize="16sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -127,16 +145,16 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Initial Budget"
+                                android:text="Budget Limit"
                                 android:textColor="#B0BEC5"
-                                android:textSize="11sp" />
+                                android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tv_total_limit"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="₱0"
                                 android:textColor="@color/white"
-                                android:textSize="14sp"
+                                android:textSize="16sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
@@ -145,61 +163,76 @@
                         android:id="@+id/budget_progress_indicator"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="24dp"
                         android:progress="0"
-                        app:indicatorColor="@color/white"
-                        app:trackColor="#4DFFFFFF"
-                        app:trackCornerRadius="4dp"
-                        app:trackThickness="8dp" />
+                        app:indicatorColor="@color/accent_color"
+                        app:trackColor="#33FFFFFF"
+                        app:trackCornerRadius="6dp"
+                        app:trackThickness="10dp" />
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_set_budget"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="64dp"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:text="Set Budget"
+                    android:text="Add Funds"
                     android:textAllCaps="false"
-                    app:cornerRadius="12dp"
-                    app:icon="@drawable/ic_add" />
+                    android:textColor="@color/primary_color"
+                    app:cornerRadius="20dp"
+                    app:strokeColor="@color/primary_color"
+                    app:icon="@drawable/ic_add"
+                    app:iconTint="@color/primary_color" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_add_expense_top"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="64dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:backgroundTint="@color/nav_background"
+                    android:backgroundTint="@color/primary_color"
                     android:text="Log Expense"
                     android:textAllCaps="false"
-                    app:cornerRadius="12dp"
-                    app:icon="@drawable/ic_remove" />
+                    android:textColor="@color/white"
+                    app:cornerRadius="20dp"
+                    app:icon="@drawable/ic_remove"
+                    app:iconTint="@color/white" />
             </LinearLayout>
 
-            <!-- New AI Suggestions Section -->
             <TextView
                 android:id="@+id/tv_suggestions_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="AI Recommended Tours"
-                android:textColor="#1A1C1E"
-                android:textSize="18sp"
+                android:layout_marginTop="32dp"
+                android:text="Recommended for you"
+                android:textColor="@color/text_main"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
+            <ProgressBar
+                android:id="@+id/ai_loading_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
+
             <HorizontalScrollView
+                android:id="@+id/suggestions_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
+                android:clipToPadding="false"
                 android:scrollbars="none">
                 <LinearLayout
                     android:id="@+id/suggestions_container"
@@ -211,121 +244,147 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="32dp"
                 android:text="Category Breakdown"
-                android:textColor="#1A1C1E"
-                android:textSize="16sp"
+                android:textColor="@color/text_main"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp"
                     android:layout_weight="1"
-                    app:cardCornerRadius="16dp">
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:padding="16dp">
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_food"
-                            app:tint="@color/nav_background" />
+                            app:tint="@color/accent_color" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Food"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tv_food_amount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="₱0"
-                            android:textColor="#1A1C1E"
-                            android:textSize="13sp"
+                            android:textColor="@color/text_main"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp"
                     android:layout_weight="1"
-                    app:cardCornerRadius="16dp">
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:padding="16dp">
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_transport"
-                            app:tint="@color/nav_background" />
+                            app:tint="@color/accent_color" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Travel"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tv_transport_amount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="₱0"
-                            android:textColor="#1A1C1E"
-                            android:textSize="13sp"
+                            android:textColor="@color/text_main"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp"
                     android:layout_weight="1"
-                    app:cardCornerRadius="16dp">
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:padding="16dp">
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_hotel"
-                            app:tint="@color/nav_background" />
+                            app:tint="@color/accent_color" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Stay"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tv_stay_amount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="₱0"
-                            android:textColor="#1A1C1E"
-                            android:textSize="13sp"
+                            android:textColor="@color/text_main"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="Transaction History"
-                android:textColor="#1A1C1E"
-                android:textSize="18sp"
+                android:text="Recent Transactions"
+                android:textColor="@color/text_main"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <LinearLayout
                 android:id="@+id/transaction_list_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="80dp"
+                android:layout_marginTop="16dp"
                 android:orientation="vertical" />
 
         </LinearLayout>
@@ -335,12 +394,12 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:background="@android:color/white"
-        app:itemIconSize="26dp"
-        app:itemIconTint="@color/nav_background"
-        app:itemTextColor="@color/nav_background"
+        android:background="@color/white"
+        app:itemIconSize="24dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
         app:labelVisibilityMode="unlabeled"
-        app:elevation="16dp"
+        app:elevation="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

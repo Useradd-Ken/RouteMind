@@ -1,4 +1,48 @@
 <resources>
     <string name="app_name">RouteMind</string>
     <string name="no_itinerary_msg">No Itinerary made yet</string>
+
+    <!-- Budget Tracker Dialogs -->
+    <string name="add_funds">Add Funds</string>
+    <string name="add_funds_desc">Enter the amount you\'d like to add to your current budget.</string>
+    <string name="amount_to_add_hint">Amount to Add (₱)</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="log_expense">Log Expense</string>
+    <string name="amount_hint">Amount (₱)</string>
+    <string name="quick_amount_selector">Quick Amount Selector</string>
+    <string name="select_category">Select Category</string>
+    <string name="cat_food">Food</string>
+    <string name="cat_transport">Transport</string>
+    <string name="cat_stay">Stay</string>
+
+    <string name="invalid_amount">Invalid amount</string>
+    <string name="funds_added_success">Funds added successfully!</string>
+    <string name="valid_amount_error">Enter a valid amount first</string>
+
+    <!-- AI Suggestions -->
+    <string name="ai_offline">Looking for ideas? We\'re offline at the moment.</string>
+    <string name="ai_finding_gems">Finding local gems for your trip...</string>
+    <string name="ai_processing_error">We had a small hiccup getting recommendations.</string>
+    <string name="ai_connection_error">We can\'t reach the servers right now. Please check your connection.</string>
+    <string name="ai_no_suggestions">No customized picks for this trip yet.</string>
+    <string name="ai_recommended_title">Recommended for your trip</string>
+    <string name="ai_added_success">%1$s added to your trip.</string>
+    <string name="budget_low_error">Budget low! Try adding more funds first.</string>
+    <string name="start_budget_prompt">Start by setting your trip budget!</string>
+    <string name="set_budget">Set Budget</string>
+
+    <!-- UI Labels -->
+    <string name="currency_format">₱%s</string>
+    <string name="currency_format_decimal">₱%.2f</string>
+    <string name="currency_format_integer">₱%.0f</string>
+    <string name="expense_format">-₱%.2f</string>
+    <string name="delete_expense">Delete Expense</string>
+    <string name="delete_expense_msg">Remove this item from your records?</string>
+    <string name="delete">Delete</string>
+    <string name="expense_removed">Expense removed</string>
+    <string name="reset_all_data">Reset All Data</string>
+    <string name="reset_msg">Are you sure? This will clear your entire budget, spending history, and recommendations.</string>
+    <string name="reset_everything">Reset Everything</string>
+    <string name="reset_success">All trip data has been reset.</string>
 </resources>
