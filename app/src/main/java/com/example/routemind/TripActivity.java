@@ -90,8 +90,8 @@ public class TripActivity extends AppCompatActivity {
         editor.putLong("foodTotal", 0);
         editor.putLong("transportTotal", 0);
         editor.putLong("stayTotal", 0);
-        editor.putString("savedSuggestions", ""); 
-        editor.putString("savedTransactions", "");
+        editor.putString("savedSuggestions", "[]"); 
+        editor.putString("savedTransactions", "[]");
         editor.apply();
 
         Snackbar.make(v, "Preparing your itinerary...", Snackbar.LENGTH_SHORT).show();

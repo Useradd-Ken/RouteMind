@@ -40,16 +40,18 @@ import com.google.ai.client.generativeai.type.Content;
 import com.google.ai.client.generativeai.type.GenerateContentResponse;
 import com.google.ai.client.generativeai.type.GenerationConfig;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.gson.annotations.SerializedName;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -66,7 +68,6 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
-import retrofit2.http.Query;
 
 public class HomePage extends AppCompatActivity {
     private static final String TAG = "HomePage";
@@ -80,8 +81,8 @@ public class HomePage extends AppCompatActivity {
     private String currentDestination = null; 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
-    private static final String GEMINI_API_KEY = "AIzaSyBCCWeKD_1Pu71Appk0dVqOrWH5RbqsO4k";
-    private DatabaseReference mDatabase;
+    private static final String GEMINI_API_KEY = "AIzaSyC6pPLeFuVcEmQhCqG8N7mX_2b_xjx2xfU";
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,11 +95,12 @@ public class HomePage extends AppCompatActivity {
             return insets;
         });
 
+        FirebaseApp.initializeApp(this);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         try {
-            mDatabase = FirebaseDatabase.getInstance().getReference("feedbacks");
+            db = FirebaseFirestore.getInstance();
         } catch (Exception e) {
-            Log.e(TAG, "Firebase error", e);
+            Log.e(TAG, "Firebase Firestore initialization failed", e);
         }
 
         resultsContainer = findViewById(R.id.results_container);
@@ -139,29 +141,37 @@ public class HomePage extends AppCompatActivity {
     }
 
     private void loadCommunityFeed() {
-        if (mDatabase != null) {
-            mDatabase.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
+        if (db != null) {
+            db.collection("reviews")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e(TAG, "Firestore Listen failed.", error);
+                        displayFeedbacks(new ArrayList<>());
+                        return;
+                    }
                     List<Feedback> feedbackList = new ArrayList<>();
-                    for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                        Feedback f = postSnapshot.getValue(Feedback.class);
-                        if (f != null) feedbackList.add(f);
+                    if (value != null) {
+                        for (QueryDocumentSnapshot doc : value) {
+                            try {
+                                Feedback f = doc.toObject(Feedback.class);
+                                feedbackList.add(f);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error deserializing feedback doc", e);
+                            }
+                        }
                     }
                     displayFeedbacks(feedbackList);
-                }
-                @Override public void onCancelled(@NonNull DatabaseError error) { displayFeedbacks(new ArrayList<>()); }
-            });
+                });
         } else displayFeedbacks(new ArrayList<>());
     }
 
     private void displayFeedbacks(List<Feedback> list) {
         feedbackContainer.removeAllViews();
-        if (list.isEmpty()) {
-            list.add(new Feedback("1", "Alex Rivera", "", "Siargao", "The surfing was incredible!", "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", 5.0f, System.currentTimeMillis() - 100000));
-            list.add(new Feedback("2", "Sarah Jenkins", "", "Baguio City", "So cold and beautiful.", "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=800", 4.5f, System.currentTimeMillis() - 500000));
-        }
-        list.sort((f1, f2) -> Long.compare(f2.getTimestamp(), f1.getTimestamp()));
+        list.add(new Feedback("1", "Alex Rivera", "", "Siargao", "The surfing was incredible!", "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", 5.0f, System.currentTimeMillis() - 100000));
+        list.add(new Feedback("2", "Sarah Jenkins", "", "Baguio City", "So cold and beautiful.", "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=800", 4.5f, System.currentTimeMillis() - 500000));
+        list.sort((f1, f2) -> Long.compare(f2.getTimestampMillis(), f1.getTimestampMillis()));
+        
         LayoutInflater inflater = LayoutInflater.from(this);
         for (Feedback f : list) {
             View v = inflater.inflate(R.layout.item_feedback, feedbackContainer, false);
@@ -170,7 +180,7 @@ public class HomePage extends AppCompatActivity {
             ((TextView) v.findViewById(R.id.tv_feedback_comment)).setText(f.getComment());
             ((RatingBar) v.findViewById(R.id.feedback_rating)).setRating(f.getRating());
             Glide.with(this).load(f.getImageUrl()).centerCrop().placeholder(R.drawable.routemind).into((ImageView) v.findViewById(R.id.iv_feedback_image));
-            long diff = System.currentTimeMillis() - f.getTimestamp();
+            long diff = System.currentTimeMillis() - f.getTimestampMillis();
             ((TextView) v.findViewById(R.id.tv_feedback_time)).setText(diff < 3600000 ? (diff / 60000) + "m ago" : (diff / 3600000) + "h ago");
             feedbackContainer.addView(v);
         }
@@ -188,13 +198,35 @@ public class HomePage extends AppCompatActivity {
         } else fetchCurrentLocation();
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) fetchCurrentLocation();
+            else { currentDestination = "Manila"; updateTitleOnly(); }
+        }
+    }
+
     private void fetchCurrentLocation() {
         try {
             fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) updateLocationName(location.getLatitude(), location.getLongitude());
-                else updateTitleOnly();
+                else requestNewLocation();
             });
-        } catch (SecurityException e) { updateTitleOnly(); }
+        } catch (SecurityException e) { currentDestination = "Manila"; updateTitleOnly(); }
+    }
+
+    private void requestNewLocation() {
+        try {
+            LocationRequest request = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).setMaxUpdates(1).build();
+            fusedLocationClient.requestLocationUpdates(request, new LocationCallback() {
+                @Override
+                public void onLocationResult(@NonNull LocationResult result) {
+                    if (result.getLastLocation() != null) updateLocationName(result.getLastLocation().getLatitude(), result.getLastLocation().getLongitude());
+                    else { currentDestination = "Manila"; updateTitleOnly(); }
+                }
+            }, Looper.getMainLooper());
+        } catch (SecurityException e) { currentDestination = "Manila"; updateTitleOnly(); }
     }
 
     private void updateLocationName(double lat, double lon) {
@@ -205,6 +237,7 @@ public class HomePage extends AppCompatActivity {
                 if (city != null) currentDestination = city;
             }
         } catch (IOException ignored) {}
+        if (currentDestination == null) currentDestination = "Manila";
         updateTitleOnly();
     }
 
@@ -247,8 +280,10 @@ public class HomePage extends AppCompatActivity {
         configBuilder.responseMimeType = "application/json";
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
-        
-        GenerativeModelFutures model = GenerativeModelFutures.from(new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config));
+
+        GenerativeModel gm = new GenerativeModel("gemini-1.5-flash", GEMINI_API_KEY, config);
+        GenerativeModelFutures model = GenerativeModelFutures.from(gm);
+
         String prompt = "List 10 popular " + category + " in " + location + ". Format as a JSON array where each object has \"title\", \"subtitle\", and \"imageUrl\". Return ONLY the JSON array.";
         Futures.addCallback(model.generateContent(new Content.Builder().addText(prompt).build()), new FutureCallback<>() {
             @Override public void onSuccess(GenerateContentResponse result) {
@@ -306,7 +341,7 @@ public class HomePage extends AppCompatActivity {
         ExploreItem(String t, String s, String i) { this.title = t; this.subtitle = s; this.imageUrl = i; }
     }
 
-    public interface PhotonService { @GET("api/") Call<PhotonResponse> search(@Query("q") String query, @Query("limit") int limit); }
+    public interface PhotonService { @GET("api/") Call<PhotonResponse> search(@retrofit2.http.Query("q") String query, @retrofit2.http.Query("limit") int limit); }
     public static class PhotonResponse { @SerializedName("features") public List<Feature> features; }
     public static class Feature { @SerializedName("properties") public Properties properties; @SerializedName("geometry") public Geometry geometry; }
     public static class Properties {
@@ -327,7 +362,7 @@ public class HomePage extends AppCompatActivity {
         private final PhotonService service;
         private List<Feature> resultList = new ArrayList<>();
         public PhotonAutocompleteAdapter(@NonNull Context context) {
-            super(context, R.layout.item_dropdown);
+            super(context, R.layout.item_dropdown, R.id.tv_dropdown_item);
             service = new Retrofit.Builder().baseUrl("https://photon.komoot.io/").addConverterFactory(GsonConverterFactory.create()).build().create(PhotonService.class);
         }
         @Override public int getCount() { return resultList.size(); }

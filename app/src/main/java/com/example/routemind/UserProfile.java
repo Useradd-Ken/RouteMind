@@ -10,6 +10,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class UserProfile extends AppCompatActivity {
 
@@ -33,6 +34,18 @@ public class UserProfile extends AppCompatActivity {
         findViewById(R.id.btn_save).setOnClickListener(v -> 
             Snackbar.make(v, "Profile saved successfully.", Snackbar.LENGTH_SHORT).show()
         );
+
+        // Implementation of the Sign Out button
+        findViewById(R.id.btn_logout).setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            MainActivity.sessionEmail = ""; // Clear session email
+            
+            // Redirect to Login (MainActivity) and clear the activity stack
+            Intent intent = new Intent(UserProfile.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
 
         setupBottomNavigation();
     }
