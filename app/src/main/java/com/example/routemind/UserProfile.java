@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -29,15 +30,18 @@ public class UserProfile extends AppCompatActivity {
 
         EditText editEmail = findViewById(R.id.edit_email);
         EditText editName = findViewById(R.id.edit_name);
+        TextView tvProfileName = findViewById(R.id.tv_profile_name);
 
         // Fetch session email from MainActivity
-        if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
-            editEmail.setText(MainActivity.sessionEmail);
+        String email = MainActivity.sessionEmail;
+        if (email != null && !email.isEmpty()) {
+            editEmail.setText(email);
             
             // Fetch name from SQLite
-            String name = dbHelper.getName(MainActivity.sessionEmail);
+            String name = dbHelper.getName(email);
             if (name != null) {
                 editName.setText(name);
+                tvProfileName.setText(name);
             }
         }
         
@@ -49,18 +53,23 @@ public class UserProfile extends AppCompatActivity {
 
         Button btnSave = findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v -> {
-            String updatedName = editName.getText().toString();
-            if (MainActivity.sessionEmail != null) {
-                // Fixed: Changed addUser to addUserProfile to match DatabaseHelper.java
+            String updatedName = editName.getText().toString().trim();
+            if (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) {
                 dbHelper.addUserProfile(MainActivity.sessionEmail, updatedName);
+                tvProfileName.setText(updatedName);
                 Toast.makeText(UserProfile.this, "Profile Updated Successfully!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(UserProfile.this, "Error: No active session", Toast.LENGTH_SHORT).show();
             }
         });
 
         // Logout Button Logic
         Button btnLogout = findViewById(R.id.btn_logout);
         btnLogout.setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut();
+            try {
+                FirebaseAuth.getInstance().signOut();
+            } catch (Exception ignored) {}
+            
             MainActivity.sessionEmail = "";
             Intent intent = new Intent(UserProfile.this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -75,22 +84,18 @@ public class UserProfile extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
                 startActivity(new Intent(getApplicationContext(), HomePage.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_activities) {
                 startActivity(new Intent(getApplicationContext(), BudgetTracker.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_maps) {
                 startActivity(new Intent(getApplicationContext(), TripActivity.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_trip_history) {
                 startActivity(new Intent(getApplicationContext(), TripHistory.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_user_profile) {

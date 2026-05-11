@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.routemind"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.routemind"
         minSdk = 25
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -38,7 +38,10 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.generativeai)
-    implementation("com.google.guava:guava:33.0.0-android")
+    implementation(libs.guava)
+    
+    // Play Services Location
+    implementation(libs.play.services.location)
     
     // Firebase
     implementation(platform(libs.firebase.bom))

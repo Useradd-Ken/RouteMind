@@ -35,6 +35,7 @@ dependencies {
     implementation libs.activity
     implementation libs.constraintlayout
     implementation libs.generativeai
+    implementation libs.play.services.location
     implementation "com.google.guava:guava:33.0.0-android"
     
     // Firebase
