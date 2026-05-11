@@ -155,7 +155,7 @@
                     app:boxCornerRadiusTopStart="16dp"
                     app:prefixText="₱ "
                     app:prefixTextColor="@color/text_main"
-                    app:startIconDrawable="@drawable/ic_money"
+                    app:startIconDrawable="@drawable/ic_peso"
                     app:startIconTint="@color/primary_color">
 
                     <com.google.android.material.textfield.TextInputEditText

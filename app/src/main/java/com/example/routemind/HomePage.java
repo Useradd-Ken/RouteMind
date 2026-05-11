@@ -80,7 +80,7 @@ public class HomePage extends AppCompatActivity {
     private String currentDestination = null; 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
-    private static final String GEMINI_API_KEY = "AIzaSyClg7gd9ap_bT8cJokw3Vt7bWQOpGG7khMfl";
+    private static final String GEMINI_API_KEY = "AIzaSyBCCWeKD_1Pu71Appk0dVqOrWH5RbqsO4k";
     private DatabaseReference mDatabase;
 
     @Override

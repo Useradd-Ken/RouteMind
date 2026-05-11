@@ -102,6 +102,16 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tv_details_price_breakdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Estimated breakdown: ..."
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:fontStyle="italic" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

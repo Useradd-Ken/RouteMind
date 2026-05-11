@@ -52,7 +52,7 @@ public class BudgetTracker extends AppCompatActivity {
     private static final String PREF_NAME = "BudgetPrefs";
     private static final String PREF_SUGGESTIONS = "savedSuggestions";
     private static final String PREF_TRANSACTIONS = "savedTransactions";
-    private static final String GEMINI_API_KEY = "AIzaSyClg7gd9ap_bT8cJokw3Vt7bWQOpGG7khM";
+    private static final String GEMINI_API_KEY = "AIzaSyBCCWeKD_1Pu71Appk0dVqOrWH5RbqsO4k";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +75,17 @@ public class BudgetTracker extends AppCompatActivity {
         handleIntentData();
         loadTransactions();
         updateBudgetUI();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadBudgetData();
+        updateBudgetUI();
+        loadTransactions();
+        // Refresh suggestions display in case one was removed
+        String savedJson = sharedPreferences.getString(PREF_SUGGESTIONS, "");
+        if (!savedJson.isEmpty()) parseAndDisplaySuggestions(savedJson);
     }
 
     private void initViews() {
@@ -148,9 +159,11 @@ public class BudgetTracker extends AppCompatActivity {
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
         String prompt = "Create 5 realistic travel suggestions for " + dest + " focusing on " + interests +
-            " for " + days + " days with budget PHP " + budget + ". " +
-            "Return JSON array: [{\"title\", \"description\", \"price\", \"category\", \"itinerary\", \"imageUrl\"}]. " +
-            "For imageUrl, use 'https://loremflickr.com/800/600/[keywords]/all'.";
+                " for " + days + " days with a total budget of PHP " + budget + ". " +
+                "Return exactly a JSON array of objects with these keys: \"title\", \"description\", \"price\", \"category\", \"itinerary\", \"imageUrl\", \"priceBreakdown\". " +
+                "The \"price\" must be a numeric value representing the total cost in PHP. " +
+                "The \"priceBreakdown\" should be a concise string explaining the estimated breakdown of the cost (e.g., 'Includes: Transport PHP 200, Food PHP 300, Fees PHP 100'). " +
+                "For \"imageUrl\", use 'https://loremflickr.com/800/600/' followed by keywords related to the place.";
 
         Content content = new Content.Builder().addText(prompt).build();
         Executor executor = Executors.newSingleThreadExecutor();
@@ -204,8 +217,22 @@ public class BudgetTracker extends AppCompatActivity {
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
                 String title = obj.optString("title", "Local Pick");
-                double price = obj.optDouble("price", 0.0);
+                
+                // Robust price parsing to handle both numbers and strings from AI
+                double price = 0;
+                if (obj.has("price")) {
+                    Object priceObj = obj.get("price");
+                    if (priceObj instanceof Number) {
+                        price = ((Number) priceObj).doubleValue();
+                    } else if (priceObj instanceof String) {
+                        try {
+                            price = Double.parseDouble(((String) priceObj).replaceAll("[^\\d.]", ""));
+                        } catch (Exception ignored) {}
+                    }
+                }
+
                 String category = obj.optString("category", "Transport");
+                String priceBreakdown = obj.optString("priceBreakdown", "No breakdown available.");
 
                 View itemView = getLayoutInflater().inflate(R.layout.item_suggestion, suggestionsContainer, false);
                 ((TextView) itemView.findViewById(R.id.tv_suggestion_title)).setText(title);
@@ -214,11 +241,13 @@ public class BudgetTracker extends AppCompatActivity {
 
                 Glide.with(this).load(obj.optString("imageUrl", "")).centerCrop().placeholder(R.drawable.routemind).into((ImageView) itemView.findViewById(R.id.iv_suggestion_image));
 
+                final double finalPrice = price;
                 itemView.setOnClickListener(v -> {
                     Intent intent = new Intent(this, TourDetailsActivity.class);
                     intent.putExtra("TITLE", title);
                     intent.putExtra("DESCRIPTION", obj.optString("description", ""));
-                    intent.putExtra("PRICE", price);
+                    intent.putExtra("PRICE", finalPrice);
+                    intent.putExtra("PRICE_BREAKDOWN", priceBreakdown);
                     intent.putExtra("ITINERARY", obj.optString("itinerary", ""));
                     intent.putExtra("IMAGE_URL", obj.optString("imageUrl", ""));
                     intent.putExtra("CATEGORY", category);
@@ -226,8 +255,8 @@ public class BudgetTracker extends AppCompatActivity {
                 });
 
                 itemView.findViewById(R.id.btn_select_suggestion).setOnClickListener(v -> {
-                    if (totalBudget >= (foodTotal + transportTotal + stayTotal + price)) {
-                        addExpense(category, price);
+                    if (totalBudget >= (foodTotal + transportTotal + stayTotal + finalPrice)) {
+                        addExpense(category, finalPrice);
                         Snackbar.make(v, getString(R.string.ai_added_success, title), Snackbar.LENGTH_SHORT).show();
                         suggestionsContainer.removeView(itemView);
                         updateSavedSuggestionsAfterRemoval(title);

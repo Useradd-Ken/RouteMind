@@ -16,7 +16,7 @@ import org.json.JSONObject;
 
 public class TourDetailsActivity extends AppCompatActivity {
 
-    private String title, description, itinerary, imageUrl, category;
+    private String title, description, itinerary, imageUrl, category, priceBreakdown;
     private double price;
     private static final String PREF_NAME = "BudgetPrefs";
     private static final String PREF_TRANSACTIONS = "savedTransactions";
@@ -41,11 +41,19 @@ public class TourDetailsActivity extends AppCompatActivity {
         imageUrl = intent.getStringExtra("IMAGE_URL");
         category = intent.getStringExtra("CATEGORY");
         price = intent.getDoubleExtra("PRICE", 0);
+        priceBreakdown = intent.getStringExtra("PRICE_BREAKDOWN");
 
         ((TextView) findViewById(R.id.tv_details_title)).setText(title);
         ((TextView) findViewById(R.id.tv_details_description)).setText(description);
         ((TextView) findViewById(R.id.tv_details_itinerary)).setText(itinerary);
         ((TextView) findViewById(R.id.tv_details_price)).setText(String.format("₱%.2f", price));
+        
+        TextView tvBreakdown = findViewById(R.id.tv_details_price_breakdown);
+        if (priceBreakdown != null && !priceBreakdown.isEmpty()) {
+            tvBreakdown.setText(priceBreakdown);
+        } else {
+            tvBreakdown.setText("Price breakdown not available.");
+        }
         
         ImageView ivDetailsImage = findViewById(R.id.iv_details_image);
         Glide.with(this)
