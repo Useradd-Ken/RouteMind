@@ -26,6 +26,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.routemind.R;
 import com.example.routemind.BudgetTracker;
+import com.example.routemind.ItinerariesActivity;
 import com.example.routemind.TripActivity;
 import com.example.routemind.TripHistory;
 import com.example.routemind.UserProfile;
@@ -292,20 +293,29 @@ public class HomePage extends AppCompatActivity {
                 clearDisplay();
                 return true;
             } else if (itemId == R.id.nav_activities) {
-                startActivity(new Intent(this, BudgetTracker.class));
+                navigateTo(BudgetTracker.class);
+                return true;
+            } else if (itemId == R.id.nav_itineraries) {
+                navigateTo(ItinerariesActivity.class);
                 return true;
             } else if (itemId == R.id.nav_trip_history) {
-                startActivity(new Intent(this, TripHistory.class));
+                navigateTo(TripHistory.class);
                 return true;
             } else if (itemId == R.id.nav_maps) {
-                startActivity(new Intent(this, TripActivity.class));
+                navigateTo(TripActivity.class);
                 return true;
             } else if (itemId == R.id.nav_user_profile) {
-                startActivity(new Intent(this, UserProfile.class));
+                navigateTo(UserProfile.class);
                 return true;
             }
             return false;
         });
+    }
+
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(this, cls));
+        overridePendingTransition(0, 0);
+        finish();
     }
 
     private static class ExploreItem {

@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_dashboard"
         android:title="Budget" />
     <item
+        android:id="@+id/nav_itineraries"
+        android:icon="@drawable/ic_event"
+        android:title="Itinerary" />
+    <item
         android:id="@+id/nav_maps"
         android:icon="@drawable/ic_map"
         android:title="Plan" />

@@ -51,6 +51,9 @@
         <activity
             android:name=".TourDetailsActivity"
             android:exported="false" />
+        <activity
+            android:name=".ItinerariesActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

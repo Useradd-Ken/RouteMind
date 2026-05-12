@@ -115,6 +115,7 @@ public class TripActivity extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) navigateTo(HomePage.class);
             else if (id == R.id.nav_activities) navigateTo(BudgetTracker.class);
+            else if (id == R.id.nav_itineraries) navigateTo(ItinerariesActivity.class);
             else if (id == R.id.nav_trip_history) navigateTo(TripHistory.class);
             else if (id == R.id.nav_user_profile) navigateTo(UserProfile.class);
             return id == R.id.nav_maps;
@@ -123,6 +124,7 @@ public class TripActivity extends AppCompatActivity {
 
     private void navigateTo(Class<?> cls) {
         startActivity(new Intent(this, cls));
+        overridePendingTransition(0, 0);
         finish();
     }
 

@@ -297,13 +297,20 @@ public class BudgetTracker extends AppCompatActivity {
         bottomNav.setSelectedItemId(R.id.nav_activities);
         bottomNav.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) { startActivity(new Intent(this, HomePage.class)); finish(); return true; }
+            if (itemId == R.id.nav_home) navigateTo(HomePage.class);
             else if (itemId == R.id.nav_activities) return true;
-            else if (itemId == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); finish(); return true; }
-            else if (itemId == R.id.nav_trip_history) { startActivity(new Intent(this, TripHistory.class)); finish(); return true; }
-            else if (itemId == R.id.nav_user_profile) { startActivity(new Intent(this, UserProfile.class)); finish(); return true; }
-            return false;
+            else if (itemId == R.id.nav_itineraries) navigateTo(ItinerariesActivity.class);
+            else if (itemId == R.id.nav_maps) navigateTo(TripActivity.class);
+            else if (itemId == R.id.nav_trip_history) navigateTo(TripHistory.class);
+            else if (itemId == R.id.nav_user_profile) navigateTo(UserProfile.class);
+            return true;
         });
+    }
+
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(this, cls));
+        overridePendingTransition(0, 0);
+        finish();
     }
 
     private void loadBudgetData() {

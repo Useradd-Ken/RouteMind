@@ -329,6 +329,7 @@ public class HomePage extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) { clearDisplay(); return true; }
             else if (id == R.id.nav_activities) { startActivity(new Intent(this, BudgetTracker.class)); return true; }
+            else if (id == R.id.nav_itineraries) { startActivity(new Intent(this, ItinerariesActivity.class)); return true; }
             else if (id == R.id.nav_trip_history) { startActivity(new Intent(this, TripHistory.class)); return true; }
             else if (id == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); return true; }
             else if (id == R.id.nav_user_profile) { startActivity(new Intent(this, UserProfile.class)); return true; }

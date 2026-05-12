@@ -31,29 +31,30 @@ public class sqlite extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                startActivity(new Intent(getApplicationContext(), HomePage.class));
-                overridePendingTransition(0, 0);
-                finish();
+                navigateTo(HomePage.class);
                 return true;
             } else if (id == R.id.nav_activities) {
                 return true;
+            } else if (id == R.id.nav_itineraries) {
+                navigateTo(ItinerariesActivity.class);
+                return true;
             } else if (id == R.id.nav_maps) {
-                startActivity(new Intent(getApplicationContext(), TripActivity.class));
-                overridePendingTransition(0, 0);
-                finish();
+                navigateTo(TripActivity.class);
                 return true;
             } else if (id == R.id.nav_trip_history) {
-                startActivity(new Intent(getApplicationContext(), TripHistory.class));
-                overridePendingTransition(0, 0);
-                finish();
+                navigateTo(TripHistory.class);
                 return true;
             } else if (id == R.id.nav_user_profile) {
-                startActivity(new Intent(getApplicationContext(), UserProfile.class));
-                overridePendingTransition(0, 0);
-                finish();
+                navigateTo(UserProfile.class);
                 return true;
             }
             return false;
         });
+    }
+
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(getApplicationContext(), cls));
+        overridePendingTransition(0, 0);
+        finish();
     }
 }

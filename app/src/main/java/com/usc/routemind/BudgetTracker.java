@@ -19,6 +19,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.routemind.R;
+import com.example.routemind.HomePage;
+import com.example.routemind.ItinerariesActivity;
+import com.example.routemind.TripActivity;
+import com.example.routemind.TripHistory;
+import com.example.routemind.UserProfile;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
@@ -83,17 +88,22 @@ public class BudgetTracker extends AppCompatActivity {
         bottomNav.setSelectedItemId(R.id.nav_activities);
         bottomNav.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(BudgetTracker.this, HomePage.class));
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_activities) {
-                return true;
-            }
-            return itemId == R.id.nav_trip_history || itemId == R.id.nav_maps || itemId == R.id.nav_user_profile;
+            if (itemId == R.id.nav_home) navigateTo(HomePage.class);
+            else if (itemId == R.id.nav_activities) return true;
+            else if (itemId == R.id.nav_itineraries) navigateTo(ItinerariesActivity.class);
+            else if (itemId == R.id.nav_maps) navigateTo(TripActivity.class);
+            else if (itemId == R.id.nav_trip_history) navigateTo(TripHistory.class);
+            else if (itemId == R.id.nav_user_profile) navigateTo(UserProfile.class);
+            return true;
         });
 
         updateBudgetUI();
+    }
+
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(this, cls));
+        overridePendingTransition(0, 0);
+        finish();
     }
 
     private void loadBudgetData() {

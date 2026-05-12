@@ -57,6 +57,7 @@ public class UserProfile extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) navigateTo(HomePage.class);
             else if (id == R.id.nav_activities) navigateTo(BudgetTracker.class);
+            else if (id == R.id.nav_itineraries) navigateTo(ItinerariesActivity.class);
             else if (id == R.id.nav_maps) navigateTo(TripActivity.class);
             else if (id == R.id.nav_trip_history) navigateTo(TripHistory.class);
             return id == R.id.nav_user_profile;
