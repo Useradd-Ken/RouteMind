@@ -19,15 +19,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import java.util.UUID;
 
 public class ItineraryDetails extends AppCompatActivity {
 
-    private DatabaseReference mDatabase;
+    private FirebaseFirestore db;
     private FirebaseStorage mStorage;
     private RatingBar ratingBar;
     private EditText etComment;
@@ -67,7 +66,7 @@ public class ItineraryDetails extends AppCompatActivity {
 
     private void initFirebase() {
         try {
-            mDatabase = FirebaseDatabase.getInstance().getReference("feedbacks");
+            db = FirebaseFirestore.getInstance();
             mStorage = FirebaseStorage.getInstance();
         } catch (Exception e) {
             Log.e("ItineraryDetails", "Firebase error", e);
@@ -115,7 +114,7 @@ public class ItineraryDetails extends AppCompatActivity {
             return;
         }
 
-        if (mDatabase != null && mStorage != null) uploadImageAndPost(view, rating, comment);
+        if (db != null && mStorage != null) uploadImageAndPost(view, rating, comment);
         else {
             Snackbar.make(view, "Offline: Saved locally.", Snackbar.LENGTH_SHORT).show();
             view.postDelayed(this::finish, 1500);
@@ -127,14 +126,27 @@ public class ItineraryDetails extends AppCompatActivity {
         StorageReference ref = mStorage.getReference().child("feedback_images/" + UUID.randomUUID().toString());
 
         ref.putFile(imageUri).addOnSuccessListener(task -> ref.getDownloadUrl().addOnSuccessListener(uri -> {
-            String id = mDatabase.push().getKey();
-            Feedback feedback = new Feedback(id, "You", "", destination, comment, uri.toString(), rating, System.currentTimeMillis());
-            mDatabase.child(id).setValue(feedback).addOnCompleteListener(t -> {
+            DatabaseHelper dbHelper = new DatabaseHelper(this);
+            String userName = dbHelper.getName(MainActivity.sessionEmail);
+            if (userName == null || userName.isEmpty()) {
+                userName = (MainActivity.sessionEmail != null && !MainActivity.sessionEmail.isEmpty()) 
+                           ? MainActivity.sessionEmail.split("@")[0] : "Traveler";
+            }
+            
+            // Provide a default profile pic if none exists
+            String userPic = "https://ui-avatars.com/api/?name=" + userName + "&background=random";
+
+            String id = db.collection("reviews").document().getId();
+            Feedback feedback = new Feedback(id, userName, userPic, destination, comment, uri.toString(), rating, System.currentTimeMillis());
+            
+            db.collection("reviews").document(id).set(feedback).addOnCompleteListener(t -> {
                 if (t.isSuccessful()) {
                     Snackbar.make(view, "Success!", Snackbar.LENGTH_SHORT).show();
                     view.postDelayed(this::finish, 1000);
+                } else {
+                    Snackbar.make(view, "Error: " + t.getException().getMessage(), Snackbar.LENGTH_LONG).show();
                 }
             });
-        })).addOnFailureListener(e -> Snackbar.make(view, "Upload failed.", Snackbar.LENGTH_LONG).show());
+        })).addOnFailureListener(e -> Snackbar.make(view, "Upload failed: " + e.getMessage(), Snackbar.LENGTH_LONG).show());
     }
 }

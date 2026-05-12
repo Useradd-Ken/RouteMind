@@ -49,7 +49,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.gson.annotations.SerializedName;
@@ -83,6 +85,7 @@ public class HomePage extends AppCompatActivity {
     private Runnable searchRunnable;
     private static final String GEMINI_API_KEY = "AIzaSyC6pPLeFuVcEmQhCqG8N7mX_2b_xjx2xfU";
     private FirebaseFirestore db;
+    private ListenerRegistration feedbackListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,17 +140,31 @@ public class HomePage extends AppCompatActivity {
         
         setupBottomNavigation();
         checkLocationPermissionAndFetch();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         loadCommunityFeed();
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (feedbackListener != null) {
+            feedbackListener.remove();
+            feedbackListener = null;
+        }
+    }
+
     private void loadCommunityFeed() {
-        if (db != null) {
-            db.collection("reviews")
+        if (db != null && FirebaseAuth.getInstance().getCurrentUser() != null) {
+            feedbackListener = db.collection("reviews")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
-                .addSnapshotListener((value, error) -> {
+                .addSnapshotListener(this, (value, error) -> {
+                    if (isFinishing() || isDestroyed()) return;
                     if (error != null) {
                         Log.e(TAG, "Firestore Listen failed.", error);
-                        displayFeedbacks(new ArrayList<>());
                         return;
                     }
                     List<Feedback> feedbackList = new ArrayList<>();
@@ -163,13 +180,20 @@ public class HomePage extends AppCompatActivity {
                     }
                     displayFeedbacks(feedbackList);
                 });
-        } else displayFeedbacks(new ArrayList<>());
+        }
     }
 
     private void displayFeedbacks(List<Feedback> list) {
+        if (isFinishing() || isDestroyed()) return;
+        
         feedbackContainer.removeAllViews();
-        list.add(new Feedback("1", "Alex Rivera", "", "Siargao", "The surfing was incredible!", "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", 5.0f, System.currentTimeMillis() - 100000));
-        list.add(new Feedback("2", "Sarah Jenkins", "", "Baguio City", "So cold and beautiful.", "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=800", 4.5f, System.currentTimeMillis() - 500000));
+        
+        // Add default data only if the list is empty and user is logged in
+        if (list.isEmpty() && FirebaseAuth.getInstance().getCurrentUser() != null) {
+            list.add(new Feedback("1", "Alex Rivera", "", "Siargao", "The surfing was incredible!", "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", 5.0f, System.currentTimeMillis() - 100000));
+            list.add(new Feedback("2", "Sarah Jenkins", "", "Baguio City", "So cold and beautiful.", "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=800", 4.5f, System.currentTimeMillis() - 500000));
+        }
+        
         list.sort((f1, f2) -> Long.compare(f2.getTimestampMillis(), f1.getTimestampMillis()));
         
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -179,7 +203,16 @@ public class HomePage extends AppCompatActivity {
             ((TextView) v.findViewById(R.id.tv_destination_tag)).setText(f.getDestination());
             ((TextView) v.findViewById(R.id.tv_feedback_comment)).setText(f.getComment());
             ((RatingBar) v.findViewById(R.id.feedback_rating)).setRating(f.getRating());
-            Glide.with(this).load(f.getImageUrl()).centerCrop().placeholder(R.drawable.routemind).into((ImageView) v.findViewById(R.id.iv_feedback_image));
+            
+            ImageView iv = v.findViewById(R.id.iv_feedback_image);
+            if (!isFinishing() && !isDestroyed()) {
+                if (f.getImageUrl() != null && !f.getImageUrl().isEmpty()) {
+                    Glide.with(this).load(f.getImageUrl()).centerCrop().placeholder(R.drawable.routemind).into(iv);
+                } else {
+                    iv.setImageResource(R.drawable.routemind);
+                }
+            }
+
             long diff = System.currentTimeMillis() - f.getTimestampMillis();
             ((TextView) v.findViewById(R.id.tv_feedback_time)).setText(diff < 3600000 ? (diff / 60000) + "m ago" : (diff / 3600000) + "h ago");
             feedbackContainer.addView(v);

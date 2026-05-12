@@ -13,7 +13,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "RouteMind.db";
-    private static final int DATABASE_VERSION = 13; // Bumped to 13 for Expenses table
+    private static final int DATABASE_VERSION = 16; // Bumped to 16 to avoid downgrade issues
 
     // Users Credentials Table
     public static final String TABLE_USERS = "users";
@@ -66,6 +66,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 13) {
             db.execSQL("CREATE TABLE " + TABLE_EXPENSES + "(" + COLUMN_EXP_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_EXP_CATEGORY + " TEXT, " + COLUMN_EXP_AMOUNT + " REAL, " + COLUMN_EXP_TIMESTAMP + " INTEGER)");
         } else {
+            // For newer versions, we can add more specific migration logic if needed
+            // Currently just ensuring tables exist or resetting if major change
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROFILE);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_TRIPS);
@@ -74,6 +76,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXPENSES);
             onCreate(db);
         }
+    }
+
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Handle downgrade by resetting or ignoring if compatible
+        onUpgrade(db, oldVersion, newVersion);
     }
 
     private void seedDestinations(SQLiteDatabase db) {
@@ -112,6 +120,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public String getName(String email) {
+        if (email == null) return null;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_PROFILE, new String[]{COLUMN_PROFILE_NAME}, COLUMN_PROFILE_EMAIL + "=?", new String[]{email}, null, null, null);
         if (cursor != null && cursor.moveToFirst()) {

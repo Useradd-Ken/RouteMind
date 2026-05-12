@@ -57,6 +57,10 @@ public class MainActivity extends AppCompatActivity {
             sessionEmail = "google_user@gmail.com";
             navigateToHome();
         });
+
+        findViewById(R.id.tvSignup).setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, RegisterActivity.class));
+        });
     }
 
     @Override
