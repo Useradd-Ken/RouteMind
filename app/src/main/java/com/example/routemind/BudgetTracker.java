@@ -170,6 +170,7 @@ public class BudgetTracker extends AppCompatActivity {
                 "Return exactly a JSON array of objects with these keys: \"title\", \"description\", \"price\", \"category\", \"itinerary\", \"imageUrl\", \"priceBreakdown\". " +
                 "The \"price\" must be a numeric value representing the total cost in PHP. " +
                 "The \"priceBreakdown\" should be a concise string explaining the estimated breakdown of the cost (e.g., 'Includes: Transport PHP 200, Food PHP 300, Fees PHP 100'). " +
+                "The \"itinerary\" MUST be a JSON array of objects, each with \"time\", \"activity\", and \"location\" keys. " +
                 "For \"imageUrl\", use 'https://loremflickr.com/800/600/' followed by keywords related to the place.";
 
         Content content = new Content.Builder().addText(prompt).build();
@@ -242,6 +243,7 @@ public class BudgetTracker extends AppCompatActivity {
 
                 String category = obj.optString("category", "Transport");
                 String priceBreakdown = obj.optString("priceBreakdown", "No breakdown available.");
+                String itineraryJson = obj.optString("itinerary", "[]");
 
                 View itemView = getLayoutInflater().inflate(R.layout.item_suggestion, suggestionsContainer, false);
                 ((TextView) itemView.findViewById(R.id.tv_suggestion_title)).setText(title);
@@ -257,7 +259,7 @@ public class BudgetTracker extends AppCompatActivity {
                     intent.putExtra("DESCRIPTION", obj.optString("description", ""));
                     intent.putExtra("PRICE", finalPrice);
                     intent.putExtra("PRICE_BREAKDOWN", priceBreakdown);
-                    intent.putExtra("ITINERARY", obj.optString("itinerary", ""));
+                    intent.putExtra("ITINERARY", itineraryJson);
                     intent.putExtra("IMAGE_URL", obj.optString("imageUrl", ""));
                     intent.putExtra("CATEGORY", category);
                     startActivity(intent);
