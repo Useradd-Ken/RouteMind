@@ -62,19 +62,30 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/tv_details_title"
+                <EditText
+                    android:id="@+id/et_details_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:background="@null"
                     android:text="Tour Title"
                     android:textColor="@color/text_main"
                     android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:enabled="false" />
+
+                <ImageButton
+                    android:id="@+id/btn_edit_toggle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="@color/accent_color" />
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     app:cardBackgroundColor="@color/accent_light"
                     app:cardCornerRadius="8dp"
                     app:cardElevation="0dp"
@@ -109,8 +120,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Estimated breakdown: ..."
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:fontStyle="italic" />
+                android:textSize="14sp" />
 
             <View
                 android:layout_width="match_parent"
@@ -126,15 +136,17 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tv_details_description"
+            <EditText
+                android:id="@+id/et_details_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:background="@null"
                 android:lineSpacingExtra="6dp"
                 android:text="Description goes here..."
                 android:textColor="@color/text_secondary"
-                android:textSize="15sp" />
+                android:textSize="15sp"
+                android:enabled="false" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -154,15 +166,17 @@
                 app:cardElevation="2dp"
                 app:strokeWidth="0dp">
 
-                <TextView
-                    android:id="@+id/tv_details_itinerary"
+                <EditText
+                    android:id="@+id/et_details_itinerary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@null"
                     android:padding="20dp"
                     android:lineSpacingExtra="6dp"
                     android:text="• Morning: Visit ...\n• Afternoon: Lunch at ..."
                     android:textColor="@color/text_main"
-                    android:textSize="15sp" />
+                    android:textSize="15sp"
+                    android:enabled="false" />
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton

@@ -25,6 +25,8 @@ import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -50,6 +52,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.gson.annotations.SerializedName;
@@ -83,6 +86,7 @@ public class HomePage extends AppCompatActivity {
     private Runnable searchRunnable;
     private static final String GEMINI_API_KEY = "AIzaSyC6pPLeFuVcEmQhCqG8N7mX_2b_xjx2xfU";
     private FirebaseFirestore db;
+    private ListenerRegistration feedbackListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,12 +146,12 @@ public class HomePage extends AppCompatActivity {
 
     private void loadCommunityFeed() {
         if (db != null) {
-            db.collection("reviews")
+            feedbackListener = db.collection("reviews")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
+                    if (isFinishing() || isDestroyed()) return;
                     if (error != null) {
                         Log.e(TAG, "Firestore Listen failed.", error);
-                        displayFeedbacks(new ArrayList<>());
                         return;
                     }
                     List<Feedback> feedbackList = new ArrayList<>();
@@ -163,15 +167,20 @@ public class HomePage extends AppCompatActivity {
                     }
                     displayFeedbacks(feedbackList);
                 });
-        } else displayFeedbacks(new ArrayList<>());
+        }
     }
 
     private void displayFeedbacks(List<Feedback> list) {
+        if (isFinishing() || isDestroyed()) return;
         feedbackContainer.removeAllViews();
-        list.add(new Feedback("1", "Alex Rivera", "", "Siargao", "The surfing was incredible!", "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", 5.0f, System.currentTimeMillis() - 100000));
-        list.add(new Feedback("2", "Sarah Jenkins", "", "Baguio City", "So cold and beautiful.", "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=800", 4.5f, System.currentTimeMillis() - 500000));
-        list.sort((f1, f2) -> Long.compare(f2.getTimestampMillis(), f1.getTimestampMillis()));
-        
+        if (list.isEmpty()) {
+            TextView tv = new TextView(this);
+            tv.setText("No reviews yet. Be the first to share!");
+            tv.setPadding(32, 32, 32, 32);
+            feedbackContainer.addView(tv);
+            return;
+        }
+
         LayoutInflater inflater = LayoutInflater.from(this);
         for (Feedback f : list) {
             View v = inflater.inflate(R.layout.item_feedback, feedbackContainer, false);
@@ -179,10 +188,80 @@ public class HomePage extends AppCompatActivity {
             ((TextView) v.findViewById(R.id.tv_destination_tag)).setText(f.getDestination());
             ((TextView) v.findViewById(R.id.tv_feedback_comment)).setText(f.getComment());
             ((RatingBar) v.findViewById(R.id.feedback_rating)).setRating(f.getRating());
-            Glide.with(this).load(f.getImageUrl()).centerCrop().placeholder(R.drawable.routemind).into((ImageView) v.findViewById(R.id.iv_feedback_image));
-            long diff = System.currentTimeMillis() - f.getTimestampMillis();
-            ((TextView) v.findViewById(R.id.tv_feedback_time)).setText(diff < 3600000 ? (diff / 60000) + "m ago" : (diff / 3600000) + "h ago");
+            
+            View imageContainer = v.findViewById(R.id.cv_feedback_image_container);
+            ImageView feedbackImage = v.findViewById(R.id.iv_feedback_image);
+            
+            if (f.getImageUrl() != null && !f.getImageUrl().isEmpty()) {
+                imageContainer.setVisibility(View.VISIBLE);
+                if (!isFinishing() && !isDestroyed()) {
+                    Glide.with(this)
+                            .load(f.getImageUrl())
+                            .centerCrop()
+                            .placeholder(R.drawable.routemind)
+                            .into(feedbackImage);
+                }
+            } else {
+                imageContainer.setVisibility(View.GONE);
+            }
+
+            // Itinerary logic
+            View itineraryContainer = v.findViewById(R.id.cv_itinerary_container);
+            if (f.getItineraryId() != null && !f.getItineraryId().isEmpty()) {
+                itineraryContainer.setVisibility(View.VISIBLE);
+                ((TextView) v.findViewById(R.id.tv_itinerary_name)).setText(f.getItineraryTitle() != null ? f.getItineraryTitle() : "Shared Itinerary");
+                
+                TextView tvUsage = v.findViewById(R.id.tv_usage_count);
+                db.collection("booked_itineraries").document(f.getItineraryId()).get().addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        long count = documentSnapshot.getLong("usageCount") != null ? documentSnapshot.getLong("usageCount") : 0;
+                        tvUsage.setText(count + (count == 1 ? " user used this" : " users used this"));
+                    }
+                });
+
+                itineraryContainer.setOnClickListener(view -> {
+                    db.collection("booked_itineraries").document(f.getItineraryId()).get().addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            Itinerary itinerary = doc.toObject(Itinerary.class);
+                            if (itinerary != null) {
+                                Intent intent = new Intent(this, TourDetailsActivity.class);
+                                intent.putExtra("TITLE", itinerary.getTitle());
+                                intent.putExtra("DESCRIPTION", itinerary.getDescription());
+                                intent.putExtra("ITINERARY", itinerary.getItineraryDetails());
+                                intent.putExtra("IMAGE_URL", itinerary.getImageUrl());
+                                intent.putExtra("CATEGORY", itinerary.getCategory());
+                                intent.putExtra("PRICE", itinerary.getPrice());
+                                intent.putExtra("PRICE_BREAKDOWN", itinerary.getPriceBreakdown());
+                                intent.putExtra("DESTINATION", itinerary.getDestination());
+                                intent.putExtra("ORIGINAL_ITINERARY_ID", f.getItineraryId());
+                                startActivity(intent);
+                            }
+                        }
+                    });
+                });
+            } else {
+                itineraryContainer.setVisibility(View.GONE);
+            }
+            
+            long timestamp = f.getTimestampMillis();
+            if (timestamp > 0) {
+                long diff = System.currentTimeMillis() - timestamp;
+                String timeAgo = diff < 60000 ? "Just now" : 
+                                 diff < 3600000 ? (diff / 60000) + "m ago" : 
+                                 diff < 86400000 ? (diff / 3600000) + "h ago" : 
+                                 (diff / 86400000) + "d ago";
+                ((TextView) v.findViewById(R.id.tv_feedback_time)).setText(timeAgo);
+            }
             feedbackContainer.addView(v);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (feedbackListener != null) {
+            feedbackListener.remove();
+            feedbackListener = null;
         }
     }
 
@@ -281,116 +360,167 @@ public class HomePage extends AppCompatActivity {
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
 
-        GenerativeModel gm = new GenerativeModel("gemini-1.5-flash", GEMINI_API_KEY, config);
+        GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config);
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
-        String prompt = "List 10 popular " + category + " in " + location + ". Format as a JSON array where each object has \"title\", \"subtitle\", and \"imageUrl\". Return ONLY the JSON array.";
-        Futures.addCallback(model.generateContent(new Content.Builder().addText(prompt).build()), new FutureCallback<>() {
+        String prompt = "List 10 popular " + category + " in " + location + ". Return exactly a JSON array of objects with \"title\", \"description\", and \"imageUrl\" keys. For \"imageUrl\", use 'https://loremflickr.com/400/300/' followed by the place name.";
+
+        Content content = new Content.Builder().addText(prompt).build();
+        Futures.addCallback(model.generateContent(content), new FutureCallback<>() {
             @Override public void onSuccess(GenerateContentResponse result) {
-                try {
-                    String json = result.getText();
-                    if (json == null) return;
-                    JSONArray array = new JSONArray(json.substring(json.indexOf("["), json.lastIndexOf("]") + 1));
-                    List<ExploreItem> items = new ArrayList<>();
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject obj = array.getJSONObject(i);
-                        items.add(new ExploreItem(obj.getString("title"), obj.getString("subtitle"), obj.getString("imageUrl")));
-                    }
-                    runOnUiThread(() -> {
-                        loadingSpinner.setVisibility(View.GONE);
-                        showExploreResults("Top picks in " + location, items, false);
-                    });
-                } catch (Exception e) { runOnUiThread(() -> { loadingSpinner.setVisibility(View.GONE); tvSectionTitle.setText("Unable to load recommendations."); }); }
+                runOnUiThread(() -> {
+                    loadingSpinner.setVisibility(View.GONE);
+                    try {
+                        JSONArray array = new JSONArray(result.getText());
+                        List<ExploreItem> items = new ArrayList<>();
+                        for (int i = 0; i < array.length(); i++) {
+                            JSONObject obj = array.getJSONObject(i);
+                            items.add(new ExploreItem(obj.getString("title"), obj.getString("description"), obj.getString("imageUrl")));
+                        }
+                        showExploreResults(displayCategory.substring(0, 1).toUpperCase() + displayCategory.substring(1), items, false);
+                    } catch (Exception e) { tvSectionTitle.setText("AI is taking a break. Try again later!"); }
+                });
             }
-            @Override public void onFailure(@NonNull Throwable t) { runOnUiThread(() -> { loadingSpinner.setVisibility(View.GONE); tvSectionTitle.setText("Trouble reaching server."); }); }
+            @Override public void onFailure(@NonNull Throwable t) {
+                runOnUiThread(() -> {
+                    loadingSpinner.setVisibility(View.GONE);
+                    tvSectionTitle.setText("Check your connection and try again");
+                });
+            }
         }, Executors.newSingleThreadExecutor());
     }
 
     private void showExploreResults(String title, List<ExploreItem> items, boolean isSearch) {
+        tvSectionTitle.setText(title + " in " + (currentDestination != null ? currentDestination : "Manila"));
         resultsContainer.removeAllViews();
-        tvSectionTitle.setText(title);
-        planTripCard.setVisibility(View.VISIBLE);
+        LayoutInflater inflater = LayoutInflater.from(this);
         for (ExploreItem item : items) {
-            View v = getLayoutInflater().inflate(R.layout.item_explore, resultsContainer, false);
+            View v = inflater.inflate(R.layout.item_explore, resultsContainer, false);
             ((TextView) v.findViewById(R.id.item_title)).setText(item.title);
-            ((TextView) v.findViewById(R.id.item_subtitle)).setText(item.subtitle);
-            Glide.with(this).load(item.imageUrl).placeholder(R.drawable.routemind).error(R.drawable.ic_map).centerCrop().into((ImageView) v.findViewById(R.id.item_image));
-            v.setOnClickListener(view -> { if (isSearch) { currentDestination = item.title; updateTitleOnly(); fetchAIRecommendations("tourist attractions", "exciting places to visit"); } });
+            ((TextView) v.findViewById(R.id.item_subtitle)).setText(item.description);
+            if (!isFinishing() && !isDestroyed()) {
+                Glide.with(this).load(item.imageUrl).centerCrop().placeholder(R.drawable.routemind).into((ImageView) v.findViewById(R.id.item_image));
+            }
+            v.setOnClickListener(view -> {
+                if (isSearch) {
+                    Intent intent = new Intent(this, TripActivity.class);
+                    intent.putExtra("DESTINATION", item.title);
+                    startActivity(intent);
+                }
+            });
             resultsContainer.addView(v);
         }
     }
 
-    private void clearDisplay() { resultsContainer.removeAllViews(); updateTitleOnly(); }
+    private void clearDisplay() {
+        resultsContainer.removeAllViews();
+        updateTitleOnly();
+        loadingSpinner.setVisibility(View.GONE);
+    }
 
     private void setupBottomNavigation() {
         BottomNavigationView nav = findViewById(R.id.bottom_navigation);
         nav.setSelectedItemId(R.id.nav_home);
         nav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) { clearDisplay(); return true; }
-            else if (id == R.id.nav_activities) { startActivity(new Intent(this, BudgetTracker.class)); return true; }
-            else if (id == R.id.nav_trip_history) { startActivity(new Intent(this, TripHistory.class)); return true; }
-            else if (id == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); return true; }
-            else if (id == R.id.nav_user_profile) { startActivity(new Intent(this, UserProfile.class)); return true; }
-            return false;
+            if (id == R.id.nav_activities) navigateTo(BudgetTracker.class);
+            else if (id == R.id.nav_maps) navigateTo(TripActivity.class);
+            else if (id == R.id.nav_trip_history) navigateTo(TripHistory.class);
+            else if (id == R.id.nav_user_profile) navigateTo(UserProfile.class);
+            return id == R.id.nav_home;
         });
     }
 
-    private static class ExploreItem {
-        String title, subtitle, imageUrl;
-        ExploreItem(String t, String s, String i) { this.title = t; this.subtitle = s; this.imageUrl = i; }
+    private void navigateTo(Class<?> cls) {
+        startActivity(new Intent(this, cls));
+        overridePendingTransition(0, 0);
+        finish();
     }
 
-    public interface PhotonService { @GET("api/") Call<PhotonResponse> search(@retrofit2.http.Query("q") String query, @retrofit2.http.Query("limit") int limit); }
-    public static class PhotonResponse { @SerializedName("features") public List<Feature> features; }
-    public static class Feature { @SerializedName("properties") public Properties properties; @SerializedName("geometry") public Geometry geometry; }
-    public static class Properties {
-        @SerializedName("name") public String name;
-        @SerializedName("city") public String city;
-        @SerializedName("country") public String country;
-        public String getDisplayName() {
-            StringBuilder sb = new StringBuilder();
-            if (name != null) sb.append(name);
-            if (city != null && !city.equalsIgnoreCase(name)) { if (sb.length() > 0) sb.append(", "); sb.append(city); }
-            if (country != null) { if (sb.length() > 0) sb.append(", "); sb.append(country); }
-            return sb.toString();
+    public static class ExploreItem {
+        String title, description, imageUrl;
+        public ExploreItem(String title, String description, String imageUrl) {
+            this.title = title; this.description = description; this.imageUrl = imageUrl;
         }
     }
-    public static class Geometry { @SerializedName("coordinates") public List<Double> coordinates; }
+
+    public interface PhotonService {
+        @GET("api/") Call<PhotonResponse> search(@retrofit2.http.Query("q") String q, @retrofit2.http.Query("limit") int limit);
+    }
+
+    public static class PhotonResponse { @SerializedName("features") List<Feature> features; }
+    public static class Feature { @SerializedName("properties") Properties properties; }
+    public static class Properties {
+        @SerializedName("name") String name;
+        @SerializedName("city") String city;
+        @SerializedName("country") String country;
+        public String getDisplayName() { return name + (city != null ? ", " + city : "") + (country != null ? ", " + country : ""); }
+    }
 
     public static class PhotonAutocompleteAdapter extends ArrayAdapter<Feature> implements Filterable {
+        private List<Feature> results = new ArrayList<>();
         private final PhotonService service;
-        private List<Feature> resultList = new ArrayList<>();
-        public PhotonAutocompleteAdapter(@NonNull Context context) {
+
+        public PhotonAutocompleteAdapter(Context context) {
             super(context, R.layout.item_dropdown, R.id.tv_dropdown_item);
-            service = new Retrofit.Builder().baseUrl("https://photon.komoot.io/").addConverterFactory(GsonConverterFactory.create()).build().create(PhotonService.class);
+            service = new Retrofit.Builder()
+                    .baseUrl("https://photon.komoot.io/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create(PhotonService.class);
         }
-        @Override public int getCount() { return resultList.size(); }
-        @Nullable @Override public Feature getItem(int pos) { return (pos >= 0 && pos < resultList.size()) ? resultList.get(pos) : null; }
-        @NonNull @Override public View getView(int pos, @Nullable View v, @NonNull ViewGroup p) {
-            if (v == null) v = LayoutInflater.from(getContext()).inflate(R.layout.item_dropdown, p, false);
-            Feature f = getItem(pos);
-            if (f != null && f.properties != null) ((TextView) v.findViewById(R.id.tv_dropdown_item)).setText(f.properties.getDisplayName());
-            return v;
-        }
-        @NonNull @Override public Filter getFilter() {
+
+        @Override
+        public int getCount() { return results.size(); }
+
+        @Override
+        public Feature getItem(int index) { return results.get(index); }
+
+        @NonNull
+        @Override
+        public Filter getFilter() {
             return new Filter() {
-                @Override protected FilterResults performFiltering(CharSequence c) {
-                    FilterResults fr = new FilterResults();
-                    if (c != null && c.length() >= 1) {
+                @Override
+                protected FilterResults performFiltering(CharSequence constraint) {
+                    FilterResults filterResults = new FilterResults();
+                    if (constraint != null && constraint.length() > 0) {
                         try {
-                            Response<PhotonResponse> r = service.search(c.toString(), 15).execute();
-                            if (r.isSuccessful() && r.body() != null) { fr.values = r.body().features; fr.count = r.body().features != null ? r.body().features.size() : 0; }
-                        } catch (Exception ignored) {}
+                            Response<PhotonResponse> response = service.search(constraint.toString(), 10).execute();
+                            if (response.isSuccessful() && response.body() != null) {
+                                results = response.body().features;
+                                filterResults.values = results;
+                                filterResults.count = results.size();
+                            }
+                        } catch (IOException e) {
+                            Log.e("PhotonAdapter", "Error fetching suggestions", e);
+                        }
                     }
-                    return fr;
+                    return filterResults;
                 }
-                @Override protected void publishResults(CharSequence c, FilterResults fr) {
-                    if (fr != null && fr.values != null) { resultList = (List<Feature>) fr.values; notifyDataSetChanged(); }
-                    else { resultList = new ArrayList<>(); notifyDataSetInvalidated(); }
+
+                @Override
+                protected void publishResults(CharSequence constraint, FilterResults results) {
+                    if (results != null && results.count > 0) {
+                        notifyDataSetChanged();
+                    } else {
+                        notifyDataSetInvalidated();
+                    }
                 }
-                @Override public CharSequence convertResultToString(Object r) { return (r instanceof Feature) ? ((Feature) r).properties.getDisplayName() : super.convertResultToString(r); }
             };
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_dropdown, parent, false);
+            }
+            Feature feature = getItem(position);
+            TextView tv = convertView.findViewById(R.id.tv_dropdown_item);
+            if (feature != null && feature.properties != null) {
+                tv.setText(feature.properties.getDisplayName());
+            }
+            return convertView;
         }
     }
 }

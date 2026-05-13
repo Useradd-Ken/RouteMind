@@ -14,7 +14,9 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
     private FirebaseAuth mAuth;
+    private DatabaseHelper dbHelper;
     public static String sessionEmail = "";
+    public static String sessionUsername = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mAuth = FirebaseAuth.getInstance();
+        dbHelper = new DatabaseHelper(this);
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
@@ -44,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
                             sessionEmail = user.getEmail();
+                            updateSessionUsername();
                             navigateToHome();
                         }
                     } else {
@@ -55,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         btnGoogleLogin.setOnClickListener(v -> {
             // Placeholder for Google Sign-In logic
             sessionEmail = "google_user@gmail.com";
+            sessionUsername = "Google User";
             navigateToHome();
         });
     }
@@ -66,7 +71,18 @@ public class MainActivity extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser != null){
             sessionEmail = currentUser.getEmail();
+            updateSessionUsername();
             navigateToHome();
+        }
+    }
+
+    private void updateSessionUsername() {
+        sessionUsername = dbHelper.getUsernameByEmail(sessionEmail);
+        if (sessionUsername == null || sessionUsername.isEmpty()) {
+            sessionUsername = dbHelper.getName(sessionEmail); // Try profile name
+        }
+        if (sessionUsername == null || sessionUsername.isEmpty()) {
+            sessionUsername = sessionEmail.split("@")[0]; // Fallback
         }
     }
 

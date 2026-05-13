@@ -45,4 +45,7 @@
     <string name="reset_msg">Are you sure? This will clear your entire budget, spending history, and recommendations.</string>
     <string name="reset_everything">Reset Everything</string>
     <string name="reset_success">All trip data has been reset.</string>
+
+    <!-- Trip History -->
+    <string name="login_required_history">Please login to see your history.</string>
 </resources>

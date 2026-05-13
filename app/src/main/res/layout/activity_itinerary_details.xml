@@ -8,7 +8,7 @@
     android:background="@color/background_light"
     tools:context=".ItineraryDetails">
 
-    <!-- Header Section (Matching TripHistory) -->
+    <!-- Header Section -->
     <ImageView
         android:id="@+id/btn_back"
         android:layout_width="40dp"
@@ -47,7 +47,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_details_header" />
 
-    <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -68,7 +67,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardCornerRadius="28dp"
+                app:cardCornerRadius="24dp"
                 app:cardElevation="2dp"
                 app:strokeWidth="0dp">
 
@@ -76,7 +75,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="28dp">
+                    android:padding="24dp">
 
                     <TextView
                         android:id="@+id/tv_detail_destination"
@@ -98,36 +97,116 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginVertical="24dp"
+                        android:layout_marginVertical="20dp"
                         android:background="#F1F5F9" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:text="How was your trip?"
+                        android:text="Detailed Ratings"
                         android:textColor="@color/text_main"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <RatingBar
-                        android:id="@+id/rating_bar"
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
+                        android:text="Rate at least 2 categories"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- Category Dropdown Selection -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Select Category to Rate"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeColor="@color/primary_color">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinner_category"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:text="Food" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
                         android:layout_marginTop="16dp"
-                        android:numStars="5"
-                        android:progressTint="#F59E0B"
-                        android:rating="0"
-                        android:stepSize="1.0"
-                        style="@android:style/Widget.Material.RatingBar" />
+                        android:padding="16dp"
+                        android:background="#F8FAFC"
+                        android:backgroundTint="#F8FAFC">
+
+                        <RatingBar
+                            android:id="@+id/rating_bar_selector"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:numStars="5"
+                            android:progressTint="#F59E0B"
+                            android:rating="0"
+                            android:stepSize="1.0"
+                            style="@android:style/Widget.Material.RatingBar" />
+
+                        <TextView
+                            android:id="@+id/tv_current_rating_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Rating for Food"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Summary of ratings -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:id="@+id/tv_summary_food"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Food: -"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginEnd="12dp"/>
+
+                        <TextView
+                            android:id="@+id/tv_summary_accommodation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stay: -"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginEnd="12dp"/>
+
+                        <TextView
+                            android:id="@+id/tv_summary_places"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Places: -"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_secondary"/>
+                    </LinearLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="28dp"
-                        android:hint="Write a short review..."
+                        android:layout_marginTop="24dp"
+                        android:hint="Your trip review..."
                         app:boxStrokeColor="@color/primary_color"
                         app:hintTextColor="@color/primary_color"
                         app:boxCornerRadiusBottomEnd="16dp"
@@ -149,7 +228,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="24dp"
-                        android:text="Add a Photo (Optional)"
+                        android:text="Experience Photo"
                         android:textColor="@color/text_main"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -184,7 +263,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="Upload a photo of your trip"
+                                android:text="Tap to add photo"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -225,15 +304,15 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_submit_rating"
                         android:layout_width="match_parent"
-                        android:layout_height="64dp"
-                        android:layout_marginTop="32dp"
-                        android:text="Submit Feedback"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="24dp"
+                        android:text="Submit Experience"
                         android:textAllCaps="false"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold"
-                        app:cornerRadius="20dp"
+                        app:cornerRadius="16dp"
                         android:backgroundTint="@color/primary_color"
-                        app:elevation="4dp"/>
+                        app:elevation="2dp"/>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
