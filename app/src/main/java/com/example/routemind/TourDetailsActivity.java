@@ -5,14 +5,22 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.snackbar.Snackbar;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TourDetailsActivity extends AppCompatActivity {
 
@@ -32,7 +40,7 @@ public class TourDetailsActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("");
         }
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         Intent intent = getIntent();
         title = intent.getStringExtra("TITLE");
@@ -45,8 +53,8 @@ public class TourDetailsActivity extends AppCompatActivity {
 
         ((TextView) findViewById(R.id.tv_details_title)).setText(title);
         ((TextView) findViewById(R.id.tv_details_description)).setText(description);
-        ((TextView) findViewById(R.id.tv_details_itinerary)).setText(itinerary);
-        ((TextView) findViewById(R.id.tv_details_price)).setText(String.format("₱%.2f", price));
+        ((TextView) findViewById(R.id.tv_details_price)).setText(String.format("₱%,.2f", price));
+        ((TextView) findViewById(R.id.tv_details_category)).setText(category != null ? category : "Activity");
         
         TextView tvBreakdown = findViewById(R.id.tv_details_price_breakdown);
         if (priceBreakdown != null && !priceBreakdown.isEmpty()) {
@@ -62,7 +70,53 @@ public class TourDetailsActivity extends AppCompatActivity {
                 .error(R.drawable.routemind)
                 .into(ivDetailsImage);
 
+        setupItinerary();
+
         findViewById(R.id.btn_book_now).setOnClickListener(v -> bookTour());
+        findViewById(R.id.btn_edit_itinerary).setOnClickListener(v -> {
+            Snackbar.make(v, "Itinerary editing coming soon!", Snackbar.LENGTH_SHORT).show();
+        });
+    }
+
+    private void setupItinerary() {
+        RecyclerView rv = findViewById(R.id.rv_itinerary);
+        View fallback = findViewById(R.id.cv_itinerary_fallback);
+        
+        try {
+            JSONArray array = new JSONArray(itinerary);
+            if (array.length() > 0) {
+                List<ItineraryStep> steps = new ArrayList<>();
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject obj = array.getJSONObject(i);
+                    steps.add(new ItineraryStep(
+                            obj.optString("time"),
+                            obj.optString("activity"),
+                            obj.optString("location")
+                    ));
+                }
+                
+                rv.setLayoutManager(new LinearLayoutManager(this));
+                rv.setAdapter(new ItineraryAdapter(steps));
+                rv.setVisibility(View.VISIBLE);
+                fallback.setVisibility(View.GONE);
+            } else {
+                showFallbackText();
+            }
+        } catch (Exception e) {
+            Log.e("TourDetails", "JSON Parse error", e);
+            showFallbackText();
+        }
+    }
+
+    private void showFallbackText() {
+        findViewById(R.id.rv_itinerary).setVisibility(View.GONE);
+        findViewById(R.id.cv_itinerary_fallback).setVisibility(View.VISIBLE);
+        TextView tvItinerary = findViewById(R.id.tv_details_itinerary);
+        if (itinerary == null || itinerary.isEmpty() || itinerary.equals("[]")) {
+            tvItinerary.setText("No specific itinerary details provided.");
+        } else {
+            tvItinerary.setText(itinerary); // Show as is if parsing failed but text exists
+        }
     }
 
     private void bookTour() {
@@ -93,7 +147,7 @@ public class TourDetailsActivity extends AppCompatActivity {
             updateSavedSuggestionsAfterRemoval(prefs, title);
             editor.apply();
 
-            Snackbar.make(findViewById(android.R.id.content), "Booking confirmed!", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(findViewById(android.R.id.content), "Added to your trip!", Snackbar.LENGTH_LONG).show();
             findViewById(android.R.id.content).postDelayed(() -> {
                 Intent backIntent = new Intent(this, BudgetTracker.class);
                 backIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -101,7 +155,7 @@ public class TourDetailsActivity extends AppCompatActivity {
                 finish();
             }, 1500);
         } else {
-            Snackbar.make(findViewById(android.R.id.content), "Insufficient balance.", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(findViewById(android.R.id.content), "Insufficient balance in your budget.", Snackbar.LENGTH_LONG).show();
         }
     }
 
@@ -111,6 +165,8 @@ public class TourDetailsActivity extends AppCompatActivity {
             JSONObject obj = new JSONObject();
             obj.put("category", category);
             obj.put("amount", amount);
+            obj.put("title", title);
+            obj.put("timestamp", System.currentTimeMillis());
             array.put(obj);
             prefs.edit().putString(PREF_TRANSACTIONS, array.toString()).apply();
         } catch (Exception e) {
@@ -130,5 +186,37 @@ public class TourDetailsActivity extends AppCompatActivity {
             }
             prefs.edit().putString("savedSuggestions", newArray.toString()).apply();
         } catch (Exception ignored) {}
+    }
+
+    private static class ItineraryStep {
+        String time, activity, location;
+        ItineraryStep(String t, String a, String l) { this.time = t; this.activity = a; this.location = l; }
+    }
+
+    private static class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.ViewHolder> {
+        private final List<ItineraryStep> steps;
+        ItineraryAdapter(List<ItineraryStep> steps) { this.steps = steps; }
+        @NonNull @Override public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_itinerary_step, parent, false));
+        }
+        @Override public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            ItineraryStep step = steps.get(position);
+            holder.tvTime.setText(step.time);
+            holder.tvActivity.setText(step.activity);
+            holder.tvLocation.setText(step.location);
+            holder.line.setVisibility(position == steps.size() - 1 ? View.INVISIBLE : View.VISIBLE);
+        }
+        @Override public int getItemCount() { return steps.size(); }
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvTime, tvActivity, tvLocation;
+            View line;
+            ViewHolder(View v) {
+                super(v);
+                tvTime = v.findViewById(R.id.tv_step_time);
+                tvActivity = v.findViewById(R.id.tv_step_activity);
+                tvLocation = v.findViewById(R.id.tv_step_location);
+                line = v.findViewById(R.id.timeline_line);
+            }
+        }
     }
 }

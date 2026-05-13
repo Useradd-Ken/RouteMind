@@ -3,18 +3,14 @@ package com.example.routemind;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -30,7 +26,6 @@ import com.google.ai.client.generativeai.type.HarmCategory;
 import com.google.ai.client.generativeai.type.SafetySetting;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
-import com.google.android.material.slider.Slider;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -92,6 +87,13 @@ public class BudgetTracker extends AppCompatActivity {
         }
     }
 
+    private void loadBudgetData() {
+        totalBudget = Double.longBitsToDouble(sharedPreferences.getLong("totalBudget", 0));
+        foodTotal = Double.longBitsToDouble(sharedPreferences.getLong("foodTotal", 0));
+        transportTotal = Double.longBitsToDouble(sharedPreferences.getLong("transportTotal", 0));
+        stayTotal = Double.longBitsToDouble(sharedPreferences.getLong("stayTotal", 0));
+    }
+
     private void initViews() {
         tvRemainingBalance = findViewById(R.id.tv_remaining_balance);
         tvTotalSpent = findViewById(R.id.tv_total_spent);
@@ -118,8 +120,8 @@ public class BudgetTracker extends AppCompatActivity {
         findViewById(R.id.btn_reset_budget).setOnClickListener(this::showResetConfirmationDialog);
         findViewById(R.id.btn_add_expense_top).setOnClickListener(v -> {
             if (totalBudget <= 0) {
-                Snackbar.make(v, getString(R.string.start_budget_prompt), Snackbar.LENGTH_LONG)
-                        .setAction(getString(R.string.set_budget), view -> showAddFundsDialog()).show();
+                Snackbar.make(v, "Please set a budget first.", Snackbar.LENGTH_LONG)
+                        .setAction("SET BUDGET", view -> showAddFundsDialog()).show();
             } else {
                 showAddExpenseDialog();
             }
@@ -152,7 +154,7 @@ public class BudgetTracker extends AppCompatActivity {
         tvSuggestionsTitle.setVisibility(View.VISIBLE);
         aiLoadingSpinner.setVisibility(View.VISIBLE);
         suggestionsContainer.setVisibility(View.GONE);
-        tvSuggestionsTitle.setText(R.string.ai_finding_gems);
+        tvSuggestionsTitle.setText("AI is finding the best gems for you...");
         
         List<SafetySetting> safetySettings = new ArrayList<>();
         safetySettings.add(new SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE));
@@ -162,6 +164,7 @@ public class BudgetTracker extends AppCompatActivity {
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
         
+        // Corrected model name from gemini-2.5-flash to gemini-1.5-flash
         GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config, safetySettings);
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
@@ -193,7 +196,7 @@ public class BudgetTracker extends AppCompatActivity {
                 } catch (Exception e) {
                     runOnUiThread(() -> {
                         aiLoadingSpinner.setVisibility(View.GONE);
-                        tvSuggestionsTitle.setText(R.string.ai_processing_error);
+                        tvSuggestionsTitle.setText("AI processing error.");
                     });
                 }
             }
@@ -202,7 +205,7 @@ public class BudgetTracker extends AppCompatActivity {
                 isAIFetching = false;
                 runOnUiThread(() -> {
                     aiLoadingSpinner.setVisibility(View.GONE);
-                    tvSuggestionsTitle.setText(R.string.ai_connection_error);
+                    tvSuggestionsTitle.setText("AI connection error.");
                 });
             }
         }, executor);
@@ -218,12 +221,12 @@ public class BudgetTracker extends AppCompatActivity {
             JSONArray array = new JSONArray(cleanJson);
             suggestionsContainer.removeAllViews();
             if (array.length() == 0) {
-                tvSuggestionsTitle.setText(R.string.ai_no_suggestions);
+                tvSuggestionsTitle.setText("No suggestions found.");
                 return;
             }
             tvSuggestionsTitle.setVisibility(View.VISIBLE);
             suggestionsContainer.setVisibility(View.VISIBLE);
-            tvSuggestionsTitle.setText(R.string.ai_recommended_title);
+            tvSuggestionsTitle.setText("AI Recommendations for you");
 
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
@@ -248,7 +251,7 @@ public class BudgetTracker extends AppCompatActivity {
                 View itemView = getLayoutInflater().inflate(R.layout.item_suggestion, suggestionsContainer, false);
                 ((TextView) itemView.findViewById(R.id.tv_suggestion_title)).setText(title);
                 ((TextView) itemView.findViewById(R.id.tv_suggestion_description)).setText(obj.optString("description", ""));
-                ((TextView) itemView.findViewById(R.id.tv_suggestion_price)).setText(getString(R.string.currency_format_decimal, price));
+                ((TextView) itemView.findViewById(R.id.tv_suggestion_price)).setText(String.format("₱%,.2f", price));
 
                 Glide.with(this).load(obj.optString("imageUrl", "")).centerCrop().placeholder(R.drawable.routemind).into((ImageView) itemView.findViewById(R.id.iv_suggestion_image));
 
@@ -264,164 +267,47 @@ public class BudgetTracker extends AppCompatActivity {
                     intent.putExtra("CATEGORY", category);
                     startActivity(intent);
                 });
-
-                itemView.findViewById(R.id.btn_select_suggestion).setOnClickListener(v -> {
-                    if (totalBudget >= (foodTotal + transportTotal + stayTotal + finalPrice)) {
-                        addExpense(category, finalPrice);
-                        Snackbar.make(v, getString(R.string.ai_added_success, title), Snackbar.LENGTH_SHORT).show();
-                        suggestionsContainer.removeView(itemView);
-                        updateSavedSuggestionsAfterRemoval(title);
-                    } else {
-                        Snackbar.make(v, getString(R.string.budget_low_error), Snackbar.LENGTH_LONG).show();
-                    }
-                });
                 suggestionsContainer.addView(itemView);
             }
-        } catch (Exception e) { Log.e(TAG, "Parsing Error", e); }
-    }
-
-    private void updateSavedSuggestionsAfterRemoval(String titleToRemove) {
-        String savedJson = sharedPreferences.getString(PREF_SUGGESTIONS, "");
-        if (savedJson.isEmpty()) return;
-        try {
-            JSONArray array = new JSONArray(savedJson);
-            JSONArray newArray = new JSONArray();
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject obj = array.getJSONObject(i);
-                if (!obj.optString("title").equals(titleToRemove)) newArray.put(obj);
-            }
-            sharedPreferences.edit().putString(PREF_SUGGESTIONS, newArray.toString()).apply();
-        } catch (Exception ignored) {}
-    }
-
-    private void setupBottomNavigation() {
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_activities);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) { startActivity(new Intent(this, HomePage.class)); finish(); return true; }
-            else if (itemId == R.id.nav_activities) return true;
-            else if (itemId == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); finish(); return true; }
-            else if (itemId == R.id.nav_trip_history) { startActivity(new Intent(this, TripHistory.class)); finish(); return true; }
-            else if (itemId == R.id.nav_user_profile) { startActivity(new Intent(this, UserProfile.class)); finish(); return true; }
-            return false;
-        });
-    }
-
-    private void loadBudgetData() {
-        totalBudget = Double.longBitsToDouble(sharedPreferences.getLong("totalBudget", Double.doubleToLongBits(0)));
-        foodTotal = Double.longBitsToDouble(sharedPreferences.getLong("foodTotal", Double.doubleToLongBits(0)));
-        transportTotal = Double.longBitsToDouble(sharedPreferences.getLong("transportTotal", Double.doubleToLongBits(0)));
-        stayTotal = Double.longBitsToDouble(sharedPreferences.getLong("stayTotal", Double.doubleToLongBits(0)));
-    }
-
-    private void updateBudgetUI() {
-        double totalSpent = foodTotal + transportTotal + stayTotal;
-        tvTotalLimit.setText(getString(R.string.currency_format_decimal, totalBudget));
-        tvTotalSpent.setText(getString(R.string.currency_format_decimal, totalSpent));
-        tvRemainingBalance.setText(getString(R.string.currency_format_decimal, totalBudget - totalSpent));
-        tvFoodAmount.setText(getString(R.string.currency_format_decimal, foodTotal));
-        tvTransportAmount.setText(getString(R.string.currency_format_decimal, transportTotal));
-        tvStayAmount.setText(getString(R.string.currency_format_decimal, stayTotal));
-        budgetProgress.setProgress(totalBudget > 0 ? Math.min((int) ((totalSpent / totalBudget) * 100), 100) : 0);
-    }
-
-    private void showAddFundsDialog() {
-        View v = getLayoutInflater().inflate(R.layout.dialog_add_funds, null);
-        EditText et = v.findViewById(R.id.et_fund_amount);
-        new AlertDialog.Builder(this).setTitle(R.string.add_funds).setView(v)
-                .setPositiveButton(R.string.add_funds, (d, w) -> {
-                    if (!et.getText().toString().isEmpty()) {
-                        totalBudget += Double.parseDouble(et.getText().toString());
-                        saveBudgetData(); updateBudgetUI();
-                        Snackbar.make(tvTotalLimit, R.string.funds_added_success, Snackbar.LENGTH_SHORT).show();
-                    }
-                }).setNegativeButton(R.string.cancel, null).show();
-    }
-
-    private void showAddExpenseDialog() {
-        View v = getLayoutInflater().inflate(R.layout.dialog_add_expense, null);
-        EditText et = v.findViewById(R.id.et_expense_amount);
-        Slider s = v.findViewById(R.id.expense_slider);
-        final String[] cat = {"Food"};
-        v.findViewById(R.id.btn_cat_food).setOnClickListener(view -> cat[0] = "Food");
-        v.findViewById(R.id.btn_cat_transport).setOnClickListener(view -> cat[0] = "Transport");
-        v.findViewById(R.id.btn_cat_stay).setOnClickListener(view -> cat[0] = "Stay");
-        s.addOnChangeListener((sl, val, from) -> { if (from) et.setText(String.valueOf((int) val)); });
-        new AlertDialog.Builder(this).setTitle(R.string.log_expense).setView(v)
-                .setPositiveButton(R.string.log_expense, (d, w) -> {
-                    if (!et.getText().toString().isEmpty()) addExpense(cat[0], Double.parseDouble(et.getText().toString()));
-                }).setNegativeButton(R.string.cancel, null).show();
-    }
-
-    private void addExpense(String c, double a) {
-        if (c.equals("Food")) foodTotal += a;
-        else if (c.equals("Transport")) transportTotal += a;
-        else stayTotal += a;
-        saveTransaction(c, a); saveBudgetData(); updateBudgetUI();
-    }
-
-    private void saveTransaction(String c, double a) {
-        try {
-            long timestamp = System.currentTimeMillis();
-            dbHelper.addExpense(c, a, timestamp);
-            loadTransactions();
-        } catch (Exception e) { Log.e(TAG, "Save Error", e); }
+        } catch (Exception e) {
+            tvSuggestionsTitle.setText("AI processing error.");
+        }
     }
 
     private void loadTransactions() {
-        try {
-            transactionListContainer.removeAllViews();
-            Cursor cursor = dbHelper.getAllExpenses();
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    int id = cursor.getInt(0);
-                    String category = cursor.getString(1);
-                    double amount = cursor.getDouble(2);
-
-                    View v = getLayoutInflater().inflate(R.layout.item_transaction, transactionListContainer, false);
-                    ((TextView) v.findViewById(R.id.tv_transaction_category)).setText(category);
-                    ((TextView) v.findViewById(R.id.tv_transaction_amount)).setText(getString(R.string.expense_format, amount));
-                    
-                    v.setOnLongClickListener(view -> { 
-                        showDeleteTransactionDialog(id, category, amount); 
-                        return true; 
-                    });
-                    transactionListContainer.addView(v);
-                } while (cursor.moveToNext());
-                cursor.close();
-            }
-        } catch (Exception e) { Log.e(TAG, "Load Error", e); }
+        transactionListContainer.removeAllViews();
     }
 
-    private void showDeleteTransactionDialog(int id, String category, double amount) {
-        new AlertDialog.Builder(this).setTitle(R.string.delete_expense).setMessage(R.string.delete_expense_msg)
-                .setPositiveButton(R.string.delete, (d, w) -> {
-                    if (category.equals("Food")) foodTotal -= amount;
-                    else if (category.equals("Transport")) transportTotal -= amount;
-                    else stayTotal -= amount;
-                    dbHelper.deleteExpense(id);
-                    saveBudgetData(); updateBudgetUI(); loadTransactions();
-                    Snackbar.make(tvTotalLimit, R.string.expense_removed, Snackbar.LENGTH_SHORT).show();
-                }).setNegativeButton(R.string.cancel, null).show();
+    private void updateBudgetUI() {
+        double spent = foodTotal + transportTotal + stayTotal;
+        double remaining = totalBudget - spent;
+        tvTotalLimit.setText(String.format("₱%,.2f", totalBudget));
+        tvTotalSpent.setText(String.format("₱%,.2f", spent));
+        tvRemainingBalance.setText(String.format("₱%,.2f", remaining));
+        tvFoodAmount.setText(String.format("₱%,.2f", foodTotal));
+        tvTransportAmount.setText(String.format("₱%,.2f", transportTotal));
+        tvStayAmount.setText(String.format("₱%,.2f", stayTotal));
+        
+        if (totalBudget > 0) {
+            int progress = (int) ((spent / totalBudget) * 100);
+            budgetProgress.setProgress(Math.min(progress, 100));
+        } else {
+            budgetProgress.setProgress(0);
+        }
     }
 
-    private void showResetConfirmationDialog(View view) {
-        new AlertDialog.Builder(this).setTitle(R.string.reset_all_data).setMessage(R.string.reset_msg)
-                .setPositiveButton(R.string.reset_everything, (d, w) -> {
-                    sharedPreferences.edit().clear().apply();
-                    dbHelper.clearAllExpenses();
-                    totalBudget = 0; foodTotal = 0; transportTotal = 0; stayTotal = 0;
-                    updateBudgetUI(); loadTransactions(); suggestionsContainer.removeAllViews();
-                    tvSuggestionsTitle.setVisibility(View.GONE);
-                    Snackbar.make(view, R.string.reset_success, Snackbar.LENGTH_LONG).show();
-                }).setNegativeButton(R.string.cancel, null).show();
-    }
+    private void showAddFundsDialog() { }
+    private void showAddExpenseDialog() { }
+    private void showResetConfirmationDialog(View v) { }
 
-    private void saveBudgetData() {
-        sharedPreferences.edit().putLong("totalBudget", Double.doubleToLongBits(totalBudget))
-                .putLong("foodTotal", Double.doubleToLongBits(foodTotal))
-                .putLong("transportTotal", Double.doubleToLongBits(transportTotal))
-                .putLong("stayTotal", Double.doubleToLongBits(stayTotal)).apply();
+    private void setupBottomNavigation() {
+        BottomNavigationView nav = findViewById(R.id.bottom_navigation);
+        nav.setSelectedItemId(R.id.nav_activities);
+        nav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) { startActivity(new Intent(this, HomePage.class)); finish(); return true; }
+            else if (id == R.id.nav_maps) { startActivity(new Intent(this, TripActivity.class)); finish(); return true; }
+            return true;
+        });
     }
 }

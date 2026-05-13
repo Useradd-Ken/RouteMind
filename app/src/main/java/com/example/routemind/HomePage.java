@@ -83,7 +83,7 @@ public class HomePage extends AppCompatActivity {
     private String currentDestination = null; 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
-    private static final String GEMINI_API_KEY = "AIzaSyC6pPLeFuVcEmQhCqG8N7mX_2b_xjx2xfU";
+    private static final String GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY;
     private FirebaseFirestore db;
     private ListenerRegistration feedbackListener;
 
@@ -115,7 +115,13 @@ public class HomePage extends AppCompatActivity {
         
         setGreeting();
 
-        findViewById(R.id.btn_generate_now).setOnClickListener(v -> startActivity(new Intent(this, TripActivity.class)));
+        findViewById(R.id.btn_generate_now).setOnClickListener(v -> {
+            Intent intent = new Intent(this, TripActivity.class);
+            if (currentDestination != null) {
+                intent.putExtra("DESTINATION", currentDestination);
+            }
+            startActivity(intent);
+        });
         
         photonService = new Retrofit.Builder().baseUrl("https://photon.komoot.io/").addConverterFactory(GsonConverterFactory.create()).build().create(PhotonService.class);
         
@@ -282,7 +288,7 @@ public class HomePage extends AppCompatActivity {
         tvSectionTitle.setText(String.format("Looking for \"%s\"...", query));
         loadingSpinner.setVisibility(View.VISIBLE);
         resultsContainer.removeAllViews();
-        photonService.search(query, 10).enqueue(new Callback<>() {
+        photonService.search(query, 10, null, null).enqueue(new Callback<>() {
             @Override public void onResponse(@NonNull Call<PhotonResponse> call, @NonNull Response<PhotonResponse> response) {
                 loadingSpinner.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null && response.body().features != null) {
@@ -374,7 +380,15 @@ public class HomePage extends AppCompatActivity {
         ExploreItem(String t, String s, String i) { this.title = t; this.subtitle = s; this.imageUrl = i; }
     }
 
-    public interface PhotonService { @GET("api/") Call<PhotonResponse> search(@retrofit2.http.Query("q") String query, @retrofit2.http.Query("limit") int limit); }
+    public interface PhotonService { 
+        @GET("api/") 
+        Call<PhotonResponse> search(
+            @retrofit2.http.Query("q") String query, 
+            @retrofit2.http.Query("limit") int limit,
+            @retrofit2.http.Query("lat") Double lat,
+            @retrofit2.http.Query("lon") Double lon
+        ); 
+    }
     public static class PhotonResponse { @SerializedName("features") public List<Feature> features; }
     public static class Feature { @SerializedName("properties") public Properties properties; @SerializedName("geometry") public Geometry geometry; }
     public static class Properties {
@@ -394,10 +408,18 @@ public class HomePage extends AppCompatActivity {
     public static class PhotonAutocompleteAdapter extends ArrayAdapter<Feature> implements Filterable {
         private final PhotonService service;
         private List<Feature> resultList = new ArrayList<>();
+        private Double lat = null, lon = null;
+
         public PhotonAutocompleteAdapter(@NonNull Context context) {
             super(context, R.layout.item_dropdown, R.id.tv_dropdown_item);
             service = new Retrofit.Builder().baseUrl("https://photon.komoot.io/").addConverterFactory(GsonConverterFactory.create()).build().create(PhotonService.class);
         }
+
+        public void setLocationBias(Double lat, Double lon) {
+            this.lat = lat;
+            this.lon = lon;
+        }
+
         @Override public int getCount() { return resultList.size(); }
         @Nullable @Override public Feature getItem(int pos) { return (pos >= 0 && pos < resultList.size()) ? resultList.get(pos) : null; }
         @NonNull @Override public View getView(int pos, @Nullable View v, @NonNull ViewGroup p) {
@@ -412,7 +434,7 @@ public class HomePage extends AppCompatActivity {
                     FilterResults fr = new FilterResults();
                     if (c != null && c.length() >= 1) {
                         try {
-                            Response<PhotonResponse> r = service.search(c.toString(), 15).execute();
+                            Response<PhotonResponse> r = service.search(c.toString(), 15, lat, lon).execute();
                             if (r.isSuccessful() && r.body() != null) { fr.values = r.body().features; fr.count = r.body().features != null ? r.body().features.size() : 0; }
                         } catch (Exception ignored) {}
                     }

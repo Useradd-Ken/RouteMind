@@ -1,9 +1,11 @@
 package com.example.routemind;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.AutoCompleteTextView;
@@ -11,6 +13,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
 import java.text.ParseException;
@@ -25,11 +30,14 @@ public class TripActivity extends AppCompatActivity {
     private AutoCompleteTextView etDestination;
     private EditText etStartDate, etEndDate, etBudget, etInterests;
     private static final String PREF_NAME = "BudgetPrefs";
+    private FusedLocationProviderClient fusedLocationClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         etDestination = findViewById(R.id.etDestination);
         etStartDate   = findViewById(R.id.etStartDate);
@@ -37,9 +45,25 @@ public class TripActivity extends AppCompatActivity {
         etBudget      = findViewById(R.id.etBudget);
         etInterests   = findViewById(R.id.etInterests);
         
+        // Auto-fill destination if passed from HomePage
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("DESTINATION")) {
+            etDestination.setText(intent.getStringExtra("DESTINATION"));
+        }
+
         HomePage.PhotonAutocompleteAdapter adapter = new HomePage.PhotonAutocompleteAdapter(this);
         etDestination.setAdapter(adapter);
         etDestination.setThreshold(1);
+        
+        // Fetch location to provide nearby suggestions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+                if (location != null) {
+                    adapter.setLocationBias(location.getLatitude(), location.getLongitude());
+                }
+            });
+        }
+
         etDestination.setOnItemClickListener((parent, view, position, id) -> {
             HomePage.Feature feature = (HomePage.Feature) parent.getItemAtPosition(position);
             if (feature != null && feature.properties != null) {
