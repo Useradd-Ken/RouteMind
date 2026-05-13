@@ -53,7 +53,7 @@ public class BudgetTracker extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private static final String PREF_NAME = "BudgetPrefs";
     private static final String PREF_SUGGESTIONS = "savedSuggestions";
-    private static final String GEMINI_API_KEY = "AIzaSyC6pPLeFuVcEmQhCqG8N7mX_2b_xjx2xfU";
+    private static final String GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY;
     private boolean isAIFetching = false;
 
     @Override
