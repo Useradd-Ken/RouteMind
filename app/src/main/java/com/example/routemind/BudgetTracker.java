@@ -53,7 +53,7 @@ public class BudgetTracker extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private static final String PREF_NAME = "BudgetPrefs";
     private static final String PREF_SUGGESTIONS = "savedSuggestions";
-    private static final String GEMINI_API_KEY = "AIzaSyC6pPLeFuVcEmQhCqG8N7mX_2b_xjx2xfU";
+    private static final String GEMINI_API_KEY = "AIzaSyCoGJfpy38qgqcwPHvHitcBDBX6prWYFTo";
     private boolean isAIFetching = false;
 
     @Override
@@ -162,13 +162,14 @@ public class BudgetTracker extends AppCompatActivity {
         configBuilder.temperature = 0.4f;
         GenerationConfig config = configBuilder.build();
         
-        GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", GEMINI_API_KEY, config, safetySettings);
+        GenerativeModel gm = new GenerativeModel("gemini-1.5-flash", GEMINI_API_KEY, config, safetySettings);
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
         String prompt = "Create 5 realistic travel suggestions for " + dest + " focusing on " + interests +
                 " for " + days + " days with a total budget of PHP " + budget + ". " +
                 "Return exactly a JSON array of objects with these keys: \"title\", \"description\", \"price\", \"category\", \"itinerary\", \"imageUrl\", \"priceBreakdown\". " +
                 "The \"price\" must be a numeric value representing the total cost in PHP. " +
+                "The \"itinerary\" MUST be a multi-line string where each line starts with a specific time and a bullet point (e.g., '09:00 • Visit the Cathedral'). " +
                 "The \"priceBreakdown\" should be a concise string explaining the estimated breakdown of the cost (e.g., 'Includes: Transport PHP 200, Food PHP 300, Fees PHP 100'). " +
                 "For \"imageUrl\", use 'https://loremflickr.com/800/600/' followed by keywords related to the place.";
 

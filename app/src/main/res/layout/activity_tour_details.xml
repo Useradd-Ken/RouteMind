@@ -140,7 +140,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="Your Itinerary"
+                android:text="Full Itinerary"
                 android:textColor="@color/text_main"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -149,10 +149,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="#2B4F60"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp"
                 app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:id="@+id/timeline_details_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <!-- Dynamic timeline rows added here -->
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tv_details_itinerary"
@@ -160,8 +169,8 @@
                     android:layout_height="wrap_content"
                     android:padding="20dp"
                     android:lineSpacingExtra="6dp"
-                    android:text="• Morning: Visit ...\n• Afternoon: Lunch at ..."
-                    android:textColor="@color/text_main"
+                    android:visibility="gone"
+                    android:textColor="@color/white"
                     android:textSize="15sp" />
             </com.google.android.material.card.MaterialCardView>
 

@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId "com.example.routemind"
         minSdk 25
-        targetSdk 36
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
@@ -43,6 +43,7 @@ dependencies {
     implementation libs.generativeai
     implementation libs.guava
     implementation libs.play.services.location
+    implementation libs.swiperefreshlayout
     
     // Firebase
     implementation platform(libs.firebase.bom)
